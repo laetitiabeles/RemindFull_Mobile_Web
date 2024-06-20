@@ -1,6 +1,10 @@
-// controllers/taskListController.js
-
 const db = require('../db');
+
+// Fonction de gestion des erreurs serveur uniforme
+const handleServerError = (res, err) => {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+};
 
 // Récupérer toutes les tâches
 const getAllTasks = (req, res) => {
@@ -9,10 +13,7 @@ const getAllTasks = (req, res) => {
   `;
 
   db.query(query, (err, results) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
+    if (err) return handleServerError(res, err); // Utilisation de la fonction de gestion des erreurs
     res.json(results);
   });
 };
@@ -27,10 +28,7 @@ const getTaskById = (req, res) => {
   `;
 
   db.query(query, [taskId], (err, results) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
+    if (err) return handleServerError(res, err); // Utilisation de la fonction de gestion des erreurs
     if (results.length === 0) {
       return res.status(404).json({ error: 'Task not found' });
     }
@@ -42,17 +40,24 @@ const getTaskById = (req, res) => {
 const createTask = (req, res) => {
   const { task, task_description, priority, due_date, profile_id } = req.body;
 
-  const insertQuery = `
-    INSERT INTO task_list (task, task_description, priority, due_date, profile_id)
-    VALUES (?, ?, ?, ?, ?)
-  `;
+  // Utilisation des transactions pour garantir l'intégrité des données
+  db.beginTransaction(err => {
+    if (err) return handleServerError(res, err);
 
-  db.query(insertQuery, [task, task_description, priority, due_date, profile_id], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to create task' });
-    }
-    res.status(201).json({ message: 'Task created successfully' });
+    const insertQuery = `
+      INSERT INTO task_list (task, task_description, priority, due_date, profile_id)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+
+    db.query(insertQuery, [task, task_description, priority, due_date, profile_id], (err, result) => {
+      if (err) {
+        return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
+      }
+      db.commit(err => {
+        if (err) return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur lors de la finalisation
+        res.status(201).json({ message: 'Task created successfully' });
+      });
+    });
   });
 };
 
@@ -61,22 +66,29 @@ const updateTask = (req, res) => {
   const taskId = req.params.taskId;
   const { task, task_description, priority, due_date, profile_id } = req.body;
 
-  const updateQuery = `
-    UPDATE task_list
-    SET task = ?,
-        task_description = ?,
-        priority = ?,
-        due_date = ?,
-        profile_id = ?
-    WHERE _id = ?
-  `;
+  // Utilisation des transactions pour garantir l'intégrité des données
+  db.beginTransaction(err => {
+    if (err) return handleServerError(res, err);
 
-  db.query(updateQuery, [task, task_description, priority, due_date, profile_id, taskId], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to update task' });
-    }
-    res.json({ message: 'Task updated successfully' });
+    const updateQuery = `
+      UPDATE task_list
+      SET task = ?,
+          task_description = ?,
+          priority = ?,
+          due_date = ?,
+          profile_id = ?
+      WHERE _id = ?
+    `;
+
+    db.query(updateQuery, [task, task_description, priority, due_date, profile_id, taskId], (err, result) => {
+      if (err) {
+        return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
+      }
+      db.commit(err => {
+        if (err) return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur lors de la finalisation
+        res.json({ message: 'Task updated successfully' });
+      });
+    });
   });
 };
 
@@ -84,17 +96,24 @@ const updateTask = (req, res) => {
 const deleteTask = (req, res) => {
   const taskId = req.params.taskId;
 
-  const deleteQuery = `
-    DELETE FROM task_list
-    WHERE _id = ?
-  `;
+  // Utilisation des transactions pour garantir l'intégrité des données
+  db.beginTransaction(err => {
+    if (err) return handleServerError(res, err);
 
-  db.query(deleteQuery, [taskId], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to delete task' });
-    }
-    res.json({ message: 'Task deleted successfully' });
+    const deleteQuery = `
+      DELETE FROM task_list
+      WHERE _id = ?
+    `;
+
+    db.query(deleteQuery, [taskId], (err, result) => {
+      if (err) {
+        return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
+      }
+      db.commit(err => {
+        if (err) return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur lors de la finalisation
+        res.json({ message: 'Task deleted successfully' });
+      });
+    });
   });
 };
 

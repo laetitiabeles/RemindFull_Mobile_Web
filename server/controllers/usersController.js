@@ -1,5 +1,11 @@
 const db = require('../db');
 
+// Fonction de gestion des erreurs serveur uniforme
+const handleServerError = (res, err) => {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+};
+
 // Récupérer tous les utilisateurs avec leurs profils et neurodivergences
 const getAllUsers = (req, res) => {
   const query = `
@@ -8,16 +14,13 @@ const getAllUsers = (req, res) => {
            GROUP_CONCAT(n.name SEPARATOR ', ') AS neurodivergence
     FROM user u
     LEFT JOIN profile p ON u._id = p.user_id
-    LEFT JOIN profile_neurodivergence pn ON p.user_id = pn.profile_id
+    LEFT JOIN profile_neurodivergence pn ON p.id = pn.profile_id
     LEFT JOIN neurodivergence n ON pn.neurodivergence_id = n.id
     GROUP BY u._id, p.birthday
   `;
   
   db.query(query, (err, results) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
+    if (err) return handleServerError(res, err); // Utilisation de la fonction de gestion des erreurs
     res.json(results);
   });
 };
@@ -32,17 +35,14 @@ const getUserById = (req, res) => {
            GROUP_CONCAT(n.name SEPARATOR ', ') AS neurodivergence
     FROM user u
     LEFT JOIN profile p ON u._id = p.user_id
-    LEFT JOIN profile_neurodivergence pn ON p.user_id = pn.profile_id
+    LEFT JOIN profile_neurodivergence pn ON p.id = pn.profile_id
     LEFT JOIN neurodivergence n ON pn.neurodivergence_id = n.id
     WHERE u._id = ?
     GROUP BY u._id, p.birthday
   `;
 
   db.query(query, [userId], (err, results) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
+    if (err) return handleServerError(res, err); // Utilisation de la fonction de gestion des erreurs
     if (results.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -54,48 +54,56 @@ const getUserById = (req, res) => {
 const createUser = (req, res) => {
   const { username, email, password, birthday, neurodivergences } = req.body;
 
-  const insertUserQuery = `
-    INSERT INTO user (username, email, password)
-    VALUES (?, ?, ?)
-  `;
+  // Utilisation des transactions pour garantir l'intégrité des données
+  db.beginTransaction(err => {
+    if (err) return handleServerError(res, err);
 
-  db.query(insertUserQuery, [username, email, password], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to create user' });
-    }
-
-    const userId = result.insertId;
-
-    const insertProfileQuery = `
-      INSERT INTO profile (user_id, birthday)
-      VALUES (?, ?)
+    const insertUserQuery = `
+      INSERT INTO user (username, email, password)
+      VALUES (?, ?, ?)
     `;
 
-    db.query(insertProfileQuery, [userId, birthday], (err, result) => {
+    db.query(insertUserQuery, [username, email, password], (err, result) => {
       if (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Failed to create profile' });
+        return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
       }
 
-      if (neurodivergences && neurodivergences.length > 0) {
-        const insertProfileNeurodivergencesQuery = `
-          INSERT INTO profile_neurodivergence (profile_id, neurodivergence_id)
-          VALUES ?
-        `;
+      const userId = result.insertId;
 
-        const values = neurodivergences.map(neurodivergenceId => [userId, neurodivergenceId]);
+      const insertProfileQuery = `
+        INSERT INTO profile (user_id, birthday)
+        VALUES (?, ?)
+      `;
 
-        db.query(insertProfileNeurodivergencesQuery, [values], (err, result) => {
-          if (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Failed to associate neurodivergences' });
-          }
-          res.status(201).json({ message: 'User and profile created successfully' });
-        });
-      } else {
-        res.status(201).json({ message: 'User and profile created successfully' });
-      }
+      db.query(insertProfileQuery, [userId, birthday], (err, result) => {
+        if (err) {
+          return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
+        }
+
+        if (neurodivergences && neurodivergences.length > 0) {
+          const insertProfileNeurodivergencesQuery = `
+            INSERT INTO profile_neurodivergence (profile_id, neurodivergence_id)
+            VALUES ?
+          `;
+
+          const values = neurodivergences.map(ndId => [result.insertId, ndId]); // Utilisation correcte de result.insertId pour insérer le profil_id
+
+          db.query(insertProfileNeurodivergencesQuery, [values], (err) => {
+            if (err) {
+              return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
+            }
+            db.commit(err => {
+              if (err) return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur lors de la finalisation
+              res.status(201).json({ message: 'User and profile created successfully' });
+            });
+          });
+        } else {
+          db.commit(err => {
+            if (err) return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur même s'il n'y a aucune neurodivergence à insérer
+            res.status(201).json({ message: 'User and profile created successfully' });
+          });
+        }
+      });
     });
   });
 };
@@ -105,61 +113,68 @@ const updateUser = (req, res) => {
   const userId = req.params.userId;
   const { username, email, birthday, neurodivergences } = req.body;
 
-  const updateUserQuery = `
-    UPDATE user
-    SET username = ?,
-        email = ?
-    WHERE _id = ?
-  `;
+  // Utilisation des transactions pour garantir l'intégrité des données
+  db.beginTransaction(err => {
+    if (err) return handleServerError(res, err);
 
-  db.query(updateUserQuery, [username, email, userId], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to update user' });
-    }
-
-    // Mettre à jour le profil de l'utilisateur
-    const updateProfileQuery = `
-      UPDATE profile
-      SET birthday = ?
-      WHERE user_id = ?
+    const updateUserQuery = `
+      UPDATE user
+      SET username = ?,
+          email = ?
+      WHERE _id = ?
     `;
 
-    db.query(updateProfileQuery, [birthday, userId], (err, result) => {
+    db.query(updateUserQuery, [username, email, userId], (err) => {
       if (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Failed to update profile' });
+        return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
       }
 
-      // Supprimer les neurodivergences précédentes
-      const deletePreviousNeurodivergencesQuery = `
-        DELETE FROM profile_neurodivergence
-        WHERE profile_id = ?
+      // Mettre à jour le profil de l'utilisateur
+      const updateProfileQuery = `
+        UPDATE profile
+        SET birthday = ?
+        WHERE user_id = ?
       `;
 
-      db.query(deletePreviousNeurodivergencesQuery, [userId], (err, result) => {
+      db.query(updateProfileQuery, [birthday, userId], (err) => {
         if (err) {
-          console.error(err);
-          return res.status(500).json({ error: 'Failed to update profile neurodivergences' });
+          return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
         }
 
-        if (neurodivergences && neurodivergences.length > 0) {
-          const insertProfileNeurodivergencesQuery = `
-            INSERT INTO profile_neurodivergence (profile_id, neurodivergence_id)
-            VALUES ?
-          `;
-          const values = neurodivergences.map(neurodivergenceId => [userId, neurodivergenceId]);
+        // Supprimer les neurodivergences précédentes
+        const deletePreviousNeurodivergencesQuery = `
+          DELETE FROM profile_neurodivergence
+          WHERE profile_id = (SELECT id FROM profile WHERE user_id = ?)
+        `;
 
-          db.query(insertProfileNeurodivergencesQuery, [values], (err, result) => {
-            if (err) {
-              console.error(err);
-              return res.status(500).json({ error: 'Failed to update profile neurodivergences' });
-            }
-            res.json({ message: 'User and profile updated successfully' });
-          });
-        } else {
-          res.json({ message: 'User and profile updated successfully' });
-        }
+        db.query(deletePreviousNeurodivergencesQuery, [userId], (err) => {
+          if (err) {
+            return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
+          }
+
+          if (neurodivergences && neurodivergences.length > 0) {
+            const insertProfileNeurodivergencesQuery = `
+              INSERT INTO profile_neurodivergence (profile_id, neurodivergence_id)
+              VALUES ?
+            `;
+            const values = neurodivergences.map(ndId => [(results[0].id), ndId]); // Utilisation correcte pour insérer profile_id
+
+            db.query(insertProfileNeurodivergencesQuery, [values], (err) => {
+              if (err) {
+                return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
+              }
+              db.commit(err => {
+                if (err) return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur lors de la finalisation
+                res.json({ message: 'User and profile updated successfully' });
+              });
+            });
+          } else {
+            db.commit(err => {
+              if (err) return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur lors de la finalisation
+              res.json({ message: 'User and profile updated successfully' });
+            });
+          }
+        });
       });
     });
   });
@@ -169,41 +184,46 @@ const updateUser = (req, res) => {
 const deleteUser = (req, res) => {
   const userId = req.params.userId;
 
-  const deleteUserQuery = `
-    DELETE FROM user
-    WHERE _id = ?
-  `;
+  // Utilisation des transactions pour garantir l'intégrité des données
+  db.beginTransaction(err => {
+    if (err) return handleServerError(res, err);
 
-  db.query(deleteUserQuery, [userId], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to delete user' });
-    }
-
-    // Supprimer le profil de l'utilisateur
-    const deleteProfileQuery = `
-      DELETE FROM profile
-      WHERE user_id = ?
+    const deleteUserQuery = `
+      DELETE FROM user
+      WHERE _id = ?
     `;
 
-    db.query(deleteProfileQuery, [userId], (err, result) => {
+    db.query(deleteUserQuery, [userId], (err) => {
       if (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Failed to delete profile' });
+        return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
       }
 
-      // Supprimer les neurodivergences associées au profil
-      const deleteProfileNeurodivergencesQuery = `
-        DELETE FROM profile_neurodivergence
-        WHERE profile_id = ?
+      // Supprimer le profil de l'utilisateur
+      const deleteProfileQuery = `
+        DELETE FROM profile
+        WHERE user_id = ?
       `;
 
-      db.query(deleteProfileNeurodivergencesQuery, [userId], (err, result) => {
+      db.query(deleteProfileQuery, [userId], (err) => {
         if (err) {
-          console.error(err);
-          return res.status(500).json({ error: 'Failed to delete profile neurodivergences' });
+          return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
         }
-        res.json({ message: 'User and profile deleted successfully' });
+
+        // Supprimer les neurodivergences associées au profil
+        const deleteProfileNeurodivergencesQuery = `
+          DELETE FROM profile_neurodivergence
+          WHERE profile_id = (SELECT id FROM profile WHERE user_id = ?)
+        `;
+
+        db.query(deleteProfileNeurodivergencesQuery, [userId], (err) => {
+          if (err) {
+            return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
+          }
+          db.commit(err => {
+            if (err) return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur lors de la finalisation
+            res.json({ message: 'User and profile deleted successfully' });
+          });
+        });
       });
     });
   });

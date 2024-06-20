@@ -1,5 +1,11 @@
 const db = require('../db');
 
+// Fonction de gestion des erreurs serveur uniforme
+const handleServerError = (res, err) => {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+};
+
 // Récupérer tous les cadeaux
 const getAllGifts = (req, res) => {
   const query = `
@@ -7,12 +13,9 @@ const getAllGifts = (req, res) => {
     FROM gifts g
     LEFT JOIN profile p ON g.profile_id = p.profile_id
   `;
-  
+
   db.query(query, (err, results) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
+    if (err) return handleServerError(res, err); // Utilisation de la fonction de gestion des erreurs
     res.json(results);
   });
 };
@@ -29,10 +32,7 @@ const getGiftById = (req, res) => {
   `;
 
   db.query(query, [giftId], (err, results) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
+    if (err) return handleServerError(res, err); // Utilisation de la fonction de gestion des erreurs
     if (results.length === 0) {
       return res.status(404).json({ error: 'Gift not found' });
     }
@@ -44,17 +44,24 @@ const getGiftById = (req, res) => {
 const createGift = (req, res) => {
   const { contact_id, gift_description, gift_date, profile_id } = req.body;
 
-  const query = `
-    INSERT INTO gifts (contact_id, gift_description, gift_date, profile_id)
-    VALUES (?, ?, ?, ?)
-  `;
+  // Utilisation des transactions pour garantir l'intégrité des données
+  db.beginTransaction(err => {
+    if (err) return handleServerError(res, err);
 
-  db.query(query, [contact_id, gift_description, gift_date, profile_id], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to create gift' });
-    }
-    res.status(201).json({ message: 'Gift created successfully' });
+    const query = `
+      INSERT INTO gifts (contact_id, gift_description, gift_date, profile_id)
+      VALUES (?, ?, ?, ?)
+    `;
+
+    db.query(query, [contact_id, gift_description, gift_date, profile_id], (err, result) => {
+      if (err) {
+        return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
+      }
+      db.commit(err => {
+        if (err) return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur lors de la finalisation
+        res.status(201).json({ message: 'Gift created successfully' });
+      });
+    });
   });
 };
 
@@ -63,18 +70,25 @@ const updateGift = (req, res) => {
   const giftId = req.params.giftId;
   const { contact_id, gift_description, gift_date, profile_id } = req.body;
 
-  const query = `
-    UPDATE gifts
-    SET contact_id = ?, gift_description = ?, gift_date = ?, profile_id = ?
-    WHERE gift_id = ?
-  `;
+  // Utilisation des transactions pour garantir l'intégrité des données
+  db.beginTransaction(err => {
+    if (err) return handleServerError(res, err);
 
-  db.query(query, [contact_id, gift_description, gift_date, profile_id, giftId], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to update gift' });
-    }
-    res.json({ message: 'Gift updated successfully' });
+    const query = `
+      UPDATE gifts
+      SET contact_id = ?, gift_description = ?, gift_date = ?, profile_id = ?
+      WHERE gift_id = ?
+    `;
+
+    db.query(query, [contact_id, gift_description, gift_date, profile_id, giftId], (err, result) => {
+      if (err) {
+        return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
+      }
+      db.commit(err => {
+        if (err) return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur lors de la finalisation
+        res.json({ message: 'Gift updated successfully' });
+      });
+    });
   });
 };
 
@@ -82,17 +96,24 @@ const updateGift = (req, res) => {
 const deleteGift = (req, res) => {
   const giftId = req.params.giftId;
 
-  const query = `
-    DELETE FROM gifts
-    WHERE gift_id = ?
-  `;
+  // Utilisation des transactions pour garantir l'intégrité des données
+  db.beginTransaction(err => {
+    if (err) return handleServerError(res, err);
 
-  db.query(query, [giftId], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to delete gift' });
-    }
-    res.json({ message: 'Gift deleted successfully' });
+    const query = `
+      DELETE FROM gifts
+      WHERE gift_id = ?
+    `;
+
+    db.query(query, [giftId], (err, result) => {
+      if (err) {
+        return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
+      }
+      db.commit(err => {
+        if (err) return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur lors de la finalisation
+        res.json({ message: 'Gift deleted successfully' });
+      });
+    });
   });
 };
 
