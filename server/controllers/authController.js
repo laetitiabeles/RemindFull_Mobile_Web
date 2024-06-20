@@ -104,7 +104,8 @@ const loginUser = async (req, res, next) => {
                 console.error('Error during login process: ', err);
                 return next(err);
             }
-            res.json({ message: 'Login successful', user: userResult });
+            console.log(`User ${username} authenticated successfully`);
+            return res.json({ message: 'Login successful', user: userResult });
         });
     } catch (err) {
         console.error('Unexpected error during login: ', err);

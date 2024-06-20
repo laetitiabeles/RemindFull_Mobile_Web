@@ -1,10 +1,6 @@
-// controllers/contactsController.js
-
 const db = require('../db');
-
-// ++ fonction de gestion des erreurs serveur uniforme
 const handleServerError = (res, err) => {
-  console.error(err);
+  console.error('Database error: ', err);
   res.status(500).json({ error: 'Internal server error' });
 };
 
@@ -42,9 +38,9 @@ const getContactById = (req, res) => {
 
 // Créer un nouveau contact
 const createContact = (req, res) => {
-  const { first_name, last_name, email, phone_number, birthday, last_contact, neurodivergences, profile_id } = req.body;
+  const { first_name, last_name, email, phone_number, birthday, last_contact, neurodivergences, profile_id } = req.body.contact;
+  console.log("Received body data:", req.body);
   
-  //++ utilisation de la transaction pour garantir l'intégrité des données
   db.beginTransaction(err => {
     if (err) return handleServerError(res, err);
 
