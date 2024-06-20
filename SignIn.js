@@ -8,20 +8,32 @@ const SignIn = ({ navigation }) => {
 
   const handleSignIn = async () => {
     try {
+      console.log('Attempting to log in with:', { email, password });
+  
       const response = await axios.post('http://10.0.2.2:3000/auth/login', {
         email,
         password,
       });
-
+  
+      console.log('Login response status:', response.status);
+      console.log('Login response data:', response.data);
+  
       if (response.status === 200) {
         Alert.alert('Success', 'User logged in successfully');
         // Implémentez votre logique de gestion de session ou de navigation ici
       } else {
+        console.log('Non-success status received:', response.status);
         Alert.alert('Error', 'Failed to log in');
       }
     } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Failed to log in');
+      console.error('Error during login:', error);
+      console.error('Error details:', error.response ? error.response.data : 'No response data');
+  
+      if (error.response && error.response.data) {
+        Alert.alert('Error', `Failed to log in: ${error.response.data.error}`);
+      } else {
+        Alert.alert('Error', 'Failed to log in');
+      }
     }
   };
 
