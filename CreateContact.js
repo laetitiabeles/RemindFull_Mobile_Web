@@ -115,7 +115,7 @@ const CreateContact = ({ navigation }) => {
             mode="date"
             display="default"
             onChange={onChange}
-            maximumDate={new Date()}  // Optional: Prevent future dates
+            maximumDate={new Date()}  // Prevent future dates
           />
         )}
       </View>
