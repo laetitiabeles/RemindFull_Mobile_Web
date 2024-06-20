@@ -54,36 +54,60 @@ const registerUser = async (req, res) => {
     }
 };
 
+
+//LOGIN
 const loginUser = async (req, res, next) => {
-    const { identifier, password } = req.body;  // `identifier` peut être soit le username, soit l'email
+    console.log('Login request received:', req.body);
+    const { username, password } = req.body;
+
+    console.log("Received username: ", username);
+    console.log("Received password: ", password);
 
     try {
         // Recherche de l'utilisateur par email ou username
-        const userQuery = 'SELECT * FROM user WHERE email = ? OR username = ?';
+        if (typeof username !== 'string' || typeof password !== 'string') {
+            return res.status(400).json({ error: 'username and password must be strings' });
+        }
+        const userQuery = 'SELECT * FROM user WHERE username = ?';
         const userResult = await new Promise((resolve, reject) => {
-            db.query(userQuery, [identifier, identifier], (err, results) => {
-                if (err) return reject(err);
+            db.query(userQuery, [username], (err, results) => {
+                if (err) {
+                    console.error('Database query error: ', err);
+                    return reject(new Error('Database query error'));
+                }
+                if (results.length === 0) {
+                    console.error('No user found with the provided username');
+                    return resolve(null);
+                }
                 resolve(results[0]);
             });
         });
 
         if (!userResult) {
-            return res.status(401).json({ error: 'No user found with these credentials' });
+            return res.status(401).json({ error: 'No user found with this username' });
         }
 
-        // Vérification du mot de passe
+        // Logs des mots de passe pour vérifier les valeurs
+        console.log("Password from DB (hashed):", userResult.password);
+        console.log("Password from input (plain):", password);
+
+        // Vérification du mot de passe avec bcrypt
         const isMatch = await bcrypt.compare(password, userResult.password);
         if (!isMatch) {
+            console.error('Password mismatch');
             return res.status(401).json({ error: 'Incorrect password' });
         }
 
         // Authentification réussie
         req.login(userResult, err => {
-            if (err) return next(err);
+            if (err) {
+                console.error('Error during login process: ', err);
+                return next(err);
+            }
             res.json({ message: 'Login successful', user: userResult });
         });
     } catch (err) {
-        console.error(err);
+        console.error('Unexpected error during login: ', err);
         res.status(500).json({ error: 'Database error during login' });
     }
 };

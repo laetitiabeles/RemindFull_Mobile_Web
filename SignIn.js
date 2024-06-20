@@ -3,15 +3,15 @@ import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
 
 const SignIn = ({ navigation }) => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSignIn = async () => {
     try {
-      console.log('Attempting to log in with:', { email, password });
+      console.log('Attempting to log in with:', { username, password });
   
       const response = await axios.post('http://10.0.2.2:3000/auth/login', {
-        email,
+        username,
         password,
       });
   
@@ -41,10 +41,10 @@ const SignIn = ({ navigation }) => {
     <View style={styles.container}>
       <TextInput
         style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={text => setEmail(text)}
-        keyboardType="email-address"
+        placeholder="Username"
+        value={username}
+        onChangeText={text => setUsername(text)}
+        keyboardType="default"
       />
       <TextInput
         style={styles.input}
