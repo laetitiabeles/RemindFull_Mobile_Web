@@ -6,37 +6,39 @@ const ContactList = ({ navigation }) => {
   const [contacts, setContacts] = useState([]);
 
   useEffect(() => {
-    axios.get('http://10.0.2.2:3000/api/contacts') // for Android Emulator
+    axios.get('http://10.0.2.2:3000/api/contacts') // Utilisation de l'adresse pour l'émulateur Android
       .then(response => {
-        console.log(response.data); // Vérifier les données
+        console.log(response.data); // Vérification des données
         setContacts(response.data);
       })
       .catch(error => console.error(error));
   }, []);
 
+  // Gestion de la suppression d'un contact
+
   const handleDelete = (contactId) => {
     Alert.alert(
-      "Confirm Delete", // Titre de l'alerte
-      "Are you sure you want to delete this contact?", // Message
+      "Confirm Delete", // Alerte
+      "Are you sure you want to delete this contact?",
       [
         {
           text: "Cancel",
-          onPress: () => console.log("Delete canceled"), // Log ou autre action
+          onPress: () => console.log("Delete canceled"),
           style: "cancel"
         },
         { 
           text: "OK", 
-          onPress: () => deleteContact(contactId) // Fonction qui exécute la suppression
+          onPress: () => deleteContact(contactId) // Execute la suppression
         }
       ]
     );
   };
-  
+
   const deleteContact = (contactId) => {
     axios.delete(`http://10.0.2.2:3000/api/contacts/${contactId}`)
       .then(response => {
         Alert.alert('Success', 'Contact deleted successfully');
-        // Update state to remove the contact from the list
+        // Mettre à jour l'état pour supprimer le contact de la liste
         setContacts(contacts.filter(contact => contact._id !== contactId));
       })
       .catch(error => {
