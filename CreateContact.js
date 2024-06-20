@@ -4,8 +4,6 @@ import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 
-// const IP_ADDRESS = '192.168.1.146';
-
 const CreateContact = ({ navigation }) => {
   const [neurodivergences, setNeurodivergences] = useState([]);
   const [selectedNeurodivergence, setSelectedNeurodivergence] = useState(null);
@@ -15,34 +13,32 @@ const CreateContact = ({ navigation }) => {
     email: '',
     phone_number: '',
     birthday: '',
+    last_contact: '',
   });
   const [date, setDate] = useState(new Date());
-  const [show, setShow] = useState(false);
+  const [lastContactDate, setLastContactDate] = useState(new Date());
+  const [showBirthdayPicker, setShowBirthdayPicker] = useState(false);
+  const [showLastContactPicker, setShowLastContactPicker] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Fetch neurodivergence options from the server
     axios.get(`http://10.0.2.2:3000/api/neurodivergences`)
-    .then(response => setNeurodivergences(response.data))
+      .then(response => setNeurodivergences(response.data))
       .catch(error => console.error(error));
   }, []);
 
-  const onChange = (event, selectedDate) => {
-    const currentDate = selectedDate || date;
-    setShow(false);
-    setDate(currentDate);
-  
-    // Formatter la date en YYYY-MM-DD
-    let formattedDate = currentDate.getFullYear().toString() + '-' +
-                        (currentDate.getMonth() + 1).toString().padStart(2, '0') + '-' +
-                        currentDate.getDate().toString().padStart(2, '0');
-  
-    setContact({...contact, birthday: formattedDate});
-  };
+  const onDateChange = (field, event, selectedDate) => {
+    const currentDate = selectedDate || (field === 'birthday' ? date : lastContactDate);
+    if (field === 'birthday') {
+      setShowBirthdayPicker(false);
+      setDate(currentDate);
+    } else {
+      setShowLastContactPicker(false);
+      setLastContactDate(currentDate);
+    }
 
-
-  const showDatePicker = () => {
-    setShow(true);
+    const formattedDate = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getDate().toString().padStart(2, '0')}`;
+    setContact({...contact, [field]: formattedDate});
   };
 
   const handleSubmit = () => {
@@ -54,28 +50,18 @@ const CreateContact = ({ navigation }) => {
     }
 
     const payload = {
-      contact: {
-        first_name: contact.first_name,
-        last_name: contact.last_name,
-        email: contact.email || null,
-        phone_number: contact.phone_number || null,
-        birthday: contact.birthday || null
-      },
-      neurodivergence_id: selectedNeurodivergence
-    };
+      contact, 
+      neurodivergence_id: selectedNeurodivergence };
+
+    console.log('Payload:', payload);
 
     axios.post('http://10.0.2.2:3000/api/contacts', payload)
       .then(response => {
-        console.log('Contact created:', response.data);
         Alert.alert('Success', 'Contact created successfully');
         navigation.goBack();
       })
       .catch(error => {
-        if (error.response && error.response.data) {
-          setError(error.response.data.error);
-        } else {
-          setError('An unexpected error occurred');
-        }
+        setError(error.response && error.response.data ? error.response.data.error : 'An unexpected error occurred');
       });
   };
 
@@ -105,23 +91,33 @@ const CreateContact = ({ navigation }) => {
         keyboardType="phone-pad"
         onChangeText={text => setContact({ ...contact, phone_number: text })}
       />
-      <View>
-        <TouchableOpacity onPress={showDatePicker} style={styles.input}>
-          <Text>{contact.birthday || "Select Birthday"}</Text>
-        </TouchableOpacity>
-        {show && (
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="default"
-            onChange={onChange}
-            maximumDate={new Date()}  // Prevent future dates
-          />
-        )}
-      </View>
+      <TouchableOpacity onPress={() => setShowBirthdayPicker(true)} style={styles.input}>
+        <Text>{contact.birthday || "Select Birthday"}</Text>
+      </TouchableOpacity>
+      {showBirthdayPicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="default"
+          onChange={(event, selectedDate) => onDateChange('birthday', event, selectedDate)}
+          maximumDate={new Date()} // Prevent future dates
+        />
+      )}
+      <TouchableOpacity onPress={() => setShowLastContactPicker(true)} style={styles.input}>
+        <Text>{contact.last_contact || "Select Last Contact Date"}</Text>
+      </TouchableOpacity>
+      {showLastContactPicker && (
+        <DateTimePicker
+          value={lastContactDate}
+          mode="date"
+          display="default"
+          onChange={(event, selectedDate) => onDateChange('last_contact', event, selectedDate)}
+          maximumDate={new Date()} // Prevent future dates
+        />
+      )}
       <Picker
         selectedValue={selectedNeurodivergence}
-        onValueChange={value => setSelectedNeurodivergence(value)}
+        onValueChange={itemValue => setSelectedNeurodivergence(itemValue)}
         style={styles.picker}
       >
         <Picker.Item label="Select Neurodivergence" value="" />
