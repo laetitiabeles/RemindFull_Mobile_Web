@@ -1,4 +1,3 @@
-// MODULES
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
@@ -29,15 +28,6 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Importe la connexion à la db
-const db = require('./db');
-
-// Envoie une erreur 500 en cas d'erreur serveur
-const handleServerError = (res, err) => {
-  console.error(err);
-  res.status(500).json({ error: err.message });
-};
-
 // Routes
 const contactsRoutes = require('./routes/contactsRoutes');
 const usersRoutes = require('./routes/usersRoutes');
@@ -48,13 +38,13 @@ const giftIdeasRoutes = require('./routes/giftIdeasRoutes');
 const taskListRoutes = require('./routes/taskListRoutes');
 
 // USE Routes
-app.use('/api/contacts', passport.authenticate('local'), contactsRoutes);
-app.use('/api/users', passport.authenticate('local'), usersRoutes);
-app.use('/api/neurodivergences', passport.authenticate('local'), neurodivergencesRoutes);
 app.use('/auth', authRoutes);
-app.use('/api/gifts', passport.authenticate('local'), giftsRoutes);
-app.use('/api/gift_ideas', passport.authenticate('local'), giftIdeasRoutes);
-app.use('/api/task-list', passport.authenticate('local'), taskListRoutes);
+app.use('/api/contacts', contactsRoutes);
+app.use('/api/users', passport.authenticate('local', { session: false }), usersRoutes);
+app.use('/api/neurodivergences', neurodivergencesRoutes);
+app.use('/api/gifts', passport.authenticate('local', { session: false }), giftsRoutes);
+app.use('/api/gift_ideas', passport.authenticate('local', { session: false }), giftIdeasRoutes);
+app.use('/api/task-list', passport.authenticate('local', { session: false }), taskListRoutes);
 
 // Démarre le serveur
 const PORT = 3000;
