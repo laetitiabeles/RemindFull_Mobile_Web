@@ -20,7 +20,7 @@ const SignIn = ({ navigation }) => {
   
       if (response.status === 200) {
         Alert.alert('Success', 'User logged in successfully');
-        // Implémentez votre logique de gestion de session ou de navigation ici
+        navigation.navigate('HomeAfterLogin');
       } else {
         console.log('Non-success status received:', response.status);
         Alert.alert('Error', 'Failed to log in');
