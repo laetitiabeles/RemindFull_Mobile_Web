@@ -8,6 +8,11 @@ import SignInScreen from './SignIn';
 import HomeScreenAfterLogin from './HomeScreenAfterLogin';
 import ContactList from './ContactList';
 import CreateContact from './CreateContact';
+import UpdateContact from './UpdateContact';
+import TaskList from './TaskList';
+import CreateTask from './CreateTask';
+import UpdateTask from './UpdateTask';
+import { UserProvider } from './UserContext';
 
 
 const Stack = createStackNavigator();
@@ -16,16 +21,22 @@ const Stack = createStackNavigator();
 
 function App() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
-        <Stack.Screen name="SignIn" component={SignInScreen} />
-        <Stack.Screen name="HomeAfterLogin" component={HomeScreenAfterLogin} />
-        <Stack.Screen name="ContactList" component={ContactList} />
-        <Stack.Screen name="CreateContact" component={CreateContact} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    < UserProvider >
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="Home">
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="SignIn" component={SignInScreen} />
+          <Stack.Screen name="HomeAfterLogin" component={HomeScreenAfterLogin} />
+          <Stack.Screen name="ContactList" component={ContactList} />
+          <Stack.Screen name="CreateContact" component={CreateContact} />
+          <Stack.Screen name="UpdateContact" component={UpdateContact} />
+          <Stack.Screen name="TaskList" component={TaskList} />
+          <Stack.Screen name="CreateTask" component={CreateTask} />
+          <Stack.Screen name="UpdateTask" component={UpdateTask} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </UserProvider>
   );
 }
 
