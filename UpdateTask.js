@@ -4,6 +4,10 @@ import axios from 'axios';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import DatePicker from 'react-native-date-picker';
 
+const formatDate = (date) => {
+  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+};
+
 const UpdateTask = () => {
   const [task, setTask] = useState('');
   const [description, setDescription] = useState('');
@@ -31,17 +35,13 @@ const UpdateTask = () => {
   }, [taskId]);
 
   const handleUpdate = async () => {
-    if (!task || !dueDate) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs requis');
-      return;
-    }
-
     try {
+      const formattedDueDate = formatDate(dueDate);
       await axios.put(`http://10.0.2.2:3000/api/task-list/${taskId}`, {
         task,
         task_description: description,
         priority,
-        due_date: dueDate.toISOString().split('T')[0], // Format de la date en ISO
+        due_date: formattedDueDate,
       });
       navigation.goBack();
     } catch (error) {
@@ -94,11 +94,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   input: {
-    height: 40,
-    borderColor: '#ccc',
     borderWidth: 1,
-    marginBottom: 20,
-    paddingHorizontal: 10,
+    borderColor: '#ddd',
+    padding: 10,
+    fontSize: 18,
+    borderRadius: 6,
+    marginBottom: 10,
   },
 });
 
