@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import axios from 'axios';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { format, differenceInDays } from 'date-fns';
 
 const HomeScreenAfterLogin = () => {
   const [tasks, setTasks] = useState([]);
   const [contacts, setContacts] = useState([]);
   const navigation = useNavigation();
+  const isFocused = useIsFocused();
 
   const fetchTasks = async () => {
     try {
@@ -17,7 +18,7 @@ const HomeScreenAfterLogin = () => {
       const filteredTasks = response.data.filter(task => {
         const taskDueDate = new Date(task.due_date);
         const daysDifference = differenceInDays(taskDueDate, today);
-        return daysDifference <= 3 && daysDifference >= 0;
+        return daysDifference >= 0 && daysDifference <= 3;
       });
       setTasks(filteredTasks);
     } catch (error) {
@@ -40,12 +41,12 @@ const HomeScreenAfterLogin = () => {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
+  useEffect(() => {
+    if (isFocused) {
       fetchTasks();
       fetchContacts();
-    }, [])
-  );
+    }
+  }, [isFocused]);
 
   const handleDelete = async (taskId) => {
     console.log(`handleDelete called with id: ${taskId}`);
@@ -65,7 +66,11 @@ const HomeScreenAfterLogin = () => {
   const renderTaskItem = ({ item }) => {
     const taskId = item._id ? item._id.toString() : Math.random().toString();
     return (
-      <View style={styles.taskItem} key={taskId}>
+      <TouchableOpacity
+        style={styles.taskItem}
+        key={taskId}
+        onPress={() => navigation.navigate('TaskDetails', { taskId: item._id })}
+      >
         <CheckBox
           value={false}
           onValueChange={() => handleDelete(item._id)}
@@ -76,24 +81,19 @@ const HomeScreenAfterLogin = () => {
           <Text>Priorité: {item.priority}</Text>
           <Text>Échéance: {format(new Date(item.due_date), 'dd-MM-yyyy')}</Text>
         </View>
-      </View>
-    );
-  };
-
-  const renderContactItem = ({ item }) => {
-    const contactId = item._id ? item._id.toString() : Math.random().toString();
-    return (
-      <TouchableOpacity onPress={() => navigation.navigate('ContactDetails', { contactId: item._id })} key={contactId}>
-        <View style={styles.contactItem}>
-          <Text style={styles.contactEmoji}>📞</Text>
-          <View style={styles.contactTextContainer}>
-            <Text style={styles.contactName}>{item.first_name} {item.last_name}</Text>
-            <Text>Dernier contact: {format(new Date(item.last_contact), 'dd-MM-yyyy')}</Text>
-          </View>
-        </View>
       </TouchableOpacity>
     );
   };
+
+  const renderContactItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.contactItem}
+      onPress={() => navigation.navigate('ContactDetails', { contactId: item._id })}
+    >
+      <Text style={styles.contactEmoji}>📞</Text>
+      <Text style={styles.contactText}>{item.first_name} {item.last_name}</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
@@ -110,8 +110,7 @@ const HomeScreenAfterLogin = () => {
         <FlatList
           data={contacts}
           renderItem={renderContactItem}
-          keyExtractor={item => (item._id ? item._id.toString() : Math.random().toString())}
-          contentContainerStyle={styles.listContainer}
+          keyExtractor={(item) => item._id.toString()}
         />
       )}
       <Text style={styles.taskHeader}>Tâches à échéance dans les 3 jours :</Text>
@@ -150,34 +149,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     width: '100%',
   },
-  contactItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    width: '100%',
-  },
-  contactTextContainer: {
-    flex: 1,
-    marginLeft: 10,
-  },
-  contactName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  contactEmoji: {
-    fontSize: 24,
-  },
-  noContactsText: {
-    textAlign: 'center',
-    marginTop: 20,
-    fontSize: 16,
-    color: '#666',
-  },
   taskHeader: {
     fontSize: 16,
-    marginTop: 20,
     marginBottom: 10,
     width: '100%',
   },
@@ -207,6 +180,26 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     width: '100%',
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    width: '100%',
+  },
+  contactEmoji: {
+    marginRight: 10,
+  },
+  contactText: {
+    fontSize: 18,
+  },
+  noContactsText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: '#666',
   },
 });
 
