@@ -6,38 +6,71 @@ import axios from 'axios';
 
 const UpdateContact = ({ route, navigation }) => {
   const { contact } = route.params;
-  const [updatedContact, setUpdatedContact] = useState(contact);
-  const [date, setDate] = useState(new Date(contact.birthday));
-  const [show, setShow] = useState(false);
+
+  // Function to format the date as JJ-MM-AA
+  const formatDate = (date) => {
+    return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
+  };
+
+  // Format the initial dates
+  const initialBirthday = contact.birthday ? new Date(contact.birthday) : new Date();
+  const initialLastContact = contact.last_contact ? new Date(contact.last_contact) : new Date();
+
+  const [updatedContact, setUpdatedContact] = useState({
+    ...contact,
+    birthday: formatDate(initialBirthday),
+    last_contact: formatDate(initialLastContact),
+  });
+  const [birthdayDate, setBirthdayDate] = useState(initialBirthday);
+  const [lastContactDate, setLastContactDate] = useState(initialLastContact);
+  const [showBirthdayPicker, setShowBirthdayPicker] = useState(false);
+  const [showLastContactPicker, setShowLastContactPicker] = useState(false);
   const [neurodivergences, setNeurodivergences] = useState([]);
   const [selectedNeurodivergence, setSelectedNeurodivergence] = useState(contact.neurodivergence_id);
 
   useEffect(() => {
-    axios.get('http://10.0.2.2:3000/api/neurodivergences')
+    axios.get(`http://10.0.2.2:3000/api/neurodivergences`)
       .then(response => setNeurodivergences(response.data))
       .catch(error => console.error('Failed to load neurodivergences:', error));
   }, []);
 
-  const showDatePicker = () => {
-    setShow(true);
+  const showBirthdayDatePicker = () => {
+    setShowBirthdayPicker(true);
   };
 
-  const onChange = (event, selectedDate) => {
-    const currentDate = selectedDate || date;
-    setShow(false);
-    setDate(currentDate);
-    setUpdatedContact({...updatedContact, birthday: currentDate.toISOString().split('T')[0]});
+  const showLastContactDatePicker = () => {
+    setShowLastContactPicker(true);
+  };
+
+  const onBirthdayChange = (event, selectedDate) => {
+    const currentDate = selectedDate || birthdayDate;
+    setShowBirthdayPicker(false);
+    setBirthdayDate(currentDate);
+    setUpdatedContact({...updatedContact, birthday: formatDate(currentDate)});
+  };
+
+  const onLastContactChange = (event, selectedDate) => {
+    const currentDate = selectedDate || lastContactDate;
+    setShowLastContactPicker(false);
+    setLastContactDate(currentDate);
+    setUpdatedContact({...updatedContact, last_contact: formatDate(currentDate)});
   };
 
   const handleUpdate = () => {
-    axios.put(`http://10.0.2.2:3000/api/contacts/${updatedContact._id}`, {...updatedContact, neurodivergence_id: selectedNeurodivergence})
+    const updatedContactWithISO = {
+      ...updatedContact,
+      birthday: birthdayDate.toISOString().split('T')[0],
+      last_contact: lastContactDate.toISOString().split('T')[0],
+    };
+
+    axios.put(`http://10.0.2.2:3000/api/contacts/${updatedContact._id}`, {...updatedContactWithISO, neurodivergence_id: selectedNeurodivergence})
       .then(() => {
-        Alert.alert('Contact updated successfully');
+        Alert.alert('Contact modifié avec succès');
         navigation.goBack();
       })
       .catch(error => {
-        console.error('Failed to update contact:', error);
-        Alert.alert('Failed to update contact');
+        console.error('Erreur lors de la modification:', error);
+        Alert.alert('Erreur, impossible de modifier le contact');
       });
   };
 
@@ -47,13 +80,13 @@ const UpdateContact = ({ route, navigation }) => {
         style={styles.input}
         value={updatedContact.first_name}
         onChangeText={(text) => setUpdatedContact({ ...updatedContact, first_name: text })}
-        placeholder="First Name"
+        placeholder="Prénom"
       />
       <TextInput
         style={styles.input}
         value={updatedContact.last_name}
         onChangeText={(text) => setUpdatedContact({ ...updatedContact, last_name: text })}
-        placeholder="Last Name"
+        placeholder="Nom"
       />
       <TextInput
         style={styles.input}
@@ -65,18 +98,29 @@ const UpdateContact = ({ route, navigation }) => {
         style={styles.input}
         value={updatedContact.phone_number}
         onChangeText={(text) => setUpdatedContact({ ...updatedContact, phone_number: text })}
-        placeholder="Phone Number"
+        placeholder="Téléphone"
         keyboardType="phone-pad"
       />
-      <TouchableOpacity onPress={showDatePicker} style={styles.input}>
-        <Text>{updatedContact.birthday || "Select Birthday"}</Text>
+      <TouchableOpacity onPress={showBirthdayDatePicker} style={styles.input}>
+        <Text>{updatedContact.birthday || "Anniversaire"}</Text>
       </TouchableOpacity>
-      {show && (
+      {showBirthdayPicker && (
         <DateTimePicker
-          value={date}
+          value={birthdayDate}
+          mode="date"
+          onChange={onBirthdayChange}
+          maximumDate={new Date()}  // Optional: Prevent future dates
+        />
+      )}
+      <TouchableOpacity onPress={showLastContactDatePicker} style={styles.input}>
+        <Text>{updatedContact.last_contact || "Dernier contact"}</Text>
+      </TouchableOpacity>
+      {showLastContactPicker && (
+        <DateTimePicker
+          value={lastContactDate}
           mode="date"
           display="default"
-          onChange={onChange}
+          onChange={onLastContactChange}
           maximumDate={new Date()}  // Optional: Prevent future dates
         />
       )}
@@ -85,12 +129,12 @@ const UpdateContact = ({ route, navigation }) => {
         onValueChange={setSelectedNeurodivergence}
         style={styles.picker}
       >
-        <Picker.Item label="Select Neurodivergence" value="" />
+        <Picker.Item label="Neurodivergence" value="" />
         {neurodivergences.map(nd => (
           <Picker.Item key={nd.id} label={nd.type} value={nd.id} />
         ))}
       </Picker>
-      <Button title="Update Contact" onPress={handleUpdate} />
+      <Button title="Modifier le contact" onPress={handleUpdate} />
     </View>
   );
 };
