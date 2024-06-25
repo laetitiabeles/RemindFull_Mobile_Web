@@ -12,6 +12,7 @@ import UpdateContact from './UpdateContact';
 import TaskList from './TaskList';
 import CreateTask from './CreateTask';
 import UpdateTask from './UpdateTask';
+import ContactDetails from './ContactDetails';
 import { UserProvider } from './UserContext';
 
 
@@ -31,6 +32,7 @@ function App() {
           <Stack.Screen name="ContactList" component={ContactList} />
           <Stack.Screen name="CreateContact" component={CreateContact} />
           <Stack.Screen name="UpdateContact" component={UpdateContact} />
+          <Stack.Screen name="ContactDetails" component={ContactDetails} />
           <Stack.Screen name="TaskList" component={TaskList} />
           <Stack.Screen name="CreateTask" component={CreateTask} />
           <Stack.Screen name="UpdateTask" component={UpdateTask} />
