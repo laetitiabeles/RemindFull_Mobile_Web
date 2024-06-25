@@ -11,6 +11,7 @@ const getAllContacts = (req, res) => {
     FROM contact c
     LEFT JOIN contact_neurodivergence cn ON c._id = cn.contact_id
     LEFT JOIN neurodivergence n ON cn.neurodivergence_id = n.id
+    ORDER BY c.first_name ASC, c.last_name ASC
   `;
   db.query(query, (err, results) => {
     if (err) return handleServerError(res, err); //++ simplification de la gestion des erreurs
@@ -54,10 +55,12 @@ const createContact = (req, res) => {
         return db.rollback(() => handleServerError(res, err)); //++ rollback en cas d'erreur
       }
 
-      const contactId = result.insertId; //++ Créer values avant de définir la requête SQL
+      const contactId = result.insertId;
+      console.log("Inserted contact ID:", contactId); // Log inserted contact ID
 
       if (neurodivergences && neurodivergences.length > 0) {
-        const values = neurodivergences.map(neurodivergenceId => [contactId, neurodivergenceId]); //++
+        const values = neurodivergences.map(neurodivergenceId => [contactId, neurodivergenceId]);
+        console.log("Neurodivergences values to insert:", values); // Log neurodivergences values
 
         const insertContactNeurodivergencesQuery = `
           INSERT INTO contact_neurodivergence (contact_id, neurodivergence_id)
@@ -82,6 +85,7 @@ const createContact = (req, res) => {
     });
   });
 };
+
 
 // Mettre à jour un contact par ID
 const updateContact = (req, res) => {

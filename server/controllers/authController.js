@@ -1,16 +1,16 @@
 // MODULES
 const express = require('express');
-const passport = require('../config/passport');
 const bcrypt = require('bcrypt');
 const db = require('../db');
 const router = express.Router();
 
 // Route Handlers
+
 const registerUser = async (req, res) => {
     const { username, email, password, birthday } = req.body;
 
     try {
-        // Check si l'user existe
+        // Vérifier si l'utilisateur existe déjà
         const existingUser = await new Promise((resolve, reject) => {
             db.query('SELECT * FROM user WHERE username = ?', [username], (err, results) => {
                 if (err) return reject(err);
@@ -22,10 +22,10 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ error: 'Username already exists' });
         }
 
-        // Inscription de l'utilisateur si l'username est unique
+        // Hash du mot de passe
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Insert l'user dans la table user
+        // Insérer l'utilisateur dans la table user
         const userResult = await new Promise((resolve, reject) => {
             db.query('INSERT INTO user (username, email, password) VALUES (?, ?, ?)',
                 [username, email, hashedPassword],
@@ -37,7 +37,7 @@ const registerUser = async (req, res) => {
 
         const userId = userResult.insertId;
 
-        // Insert le profil de l'utilisateur dans la table profile
+        // Insérer le profil de l'utilisateur dans la table profile
         const profileResult = await new Promise((resolve, reject) => {
             db.query('INSERT INTO profile (user_id, birthday) VALUES (?, ?)',
                 [userId, birthday],
@@ -54,20 +54,17 @@ const registerUser = async (req, res) => {
     }
 };
 
-
-//LOGIN
 const loginUser = async (req, res, next) => {
     console.log('Login request received:', req.body);
     const { username, password } = req.body;
 
-    console.log("Received username: ", username);
-    console.log("Received password: ", password);
-
     try {
-        // Recherche de l'utilisateur par email ou username
+        // Vérification des types de données
         if (typeof username !== 'string' || typeof password !== 'string') {
             return res.status(400).json({ error: 'username and password must be strings' });
         }
+
+        // Recherche de l'utilisateur par nom d'utilisateur
         const userQuery = 'SELECT * FROM user WHERE username = ?';
         const userResult = await new Promise((resolve, reject) => {
             db.query(userQuery, [username], (err, results) => {
@@ -79,6 +76,7 @@ const loginUser = async (req, res, next) => {
                     console.error('No user found with the provided username');
                     return resolve(null);
                 }
+                console.log('User query results:', results);
                 resolve(results[0]);
             });
         });
@@ -86,10 +84,6 @@ const loginUser = async (req, res, next) => {
         if (!userResult) {
             return res.status(401).json({ error: 'No user found with this username' });
         }
-
-        // Logs des mots de passe pour vérifier les valeurs
-        console.log("Password from DB (hashed):", userResult.password);
-        console.log("Password from input (plain):", password);
 
         // Vérification du mot de passe avec bcrypt
         const isMatch = await bcrypt.compare(password, userResult.password);
@@ -128,7 +122,7 @@ const logoutUser = (req, res) => {
     });
 };
 
-// Export as individual modules
+// Exporter les fonctions individuelles
 module.exports = {
     registerUser,
     loginUser,

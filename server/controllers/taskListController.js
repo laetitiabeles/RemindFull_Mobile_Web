@@ -13,9 +13,10 @@ const getAllTasks = (req, res) => {
   `;
 
   db.query(query, (err, results) => {
-    if (err) return handleServerError(res, err); // Utilisation de la fonction de gestion des erreurs
+    if (err) return handleServerError(res, err); //++ simplification de la gestion des erreurs
     res.json(results);
   });
+  console.log('GET /api/task-list');
 };
 
 // Récupérer une tâche par son ID
@@ -96,6 +97,13 @@ const updateTask = (req, res) => {
 const deleteTask = (req, res) => {
   const taskId = req.params.taskId;
 
+  console.log(`Attempting to delete task with id: ${taskId}`);
+
+  if (!taskId) {
+    console.error('Task ID is undefined');
+    return res.status(400).json({ error: 'Task ID is required' });
+  }
+
   // Utilisation des transactions pour garantir l'intégrité des données
   db.beginTransaction(err => {
     if (err) return handleServerError(res, err);
@@ -107,10 +115,14 @@ const deleteTask = (req, res) => {
 
     db.query(deleteQuery, [taskId], (err, result) => {
       if (err) {
-        return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
+        console.error('Database query error during task deletion:', err);
+        return handleServerError(res, err);
       }
       db.commit(err => {
-        if (err) return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur lors de la finalisation
+        if (err) {
+          console.error('Error during commit:', err);
+          return handleServerError(res, err);
+        }
         res.json({ message: 'Task deleted successfully' });
       });
     });
