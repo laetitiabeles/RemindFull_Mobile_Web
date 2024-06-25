@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button, View, Text, FlatList, StyleSheet } from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import axios from 'axios';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { format, differenceInDays } from 'date-fns';
 
 const HomeScreenAfterLogin = () => {
   const [tasks, setTasks] = useState([]);
+  const [contacts, setContacts] = useState([]);
   const navigation = useNavigation();
 
   const fetchTasks = async () => {
@@ -24,9 +25,27 @@ const HomeScreenAfterLogin = () => {
     }
   };
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+  const fetchContacts = async () => {
+    try {
+      const response = await axios.get(`http://10.0.2.2:3000/api/contacts`);
+      const today = new Date();
+      const filteredContacts = response.data.filter(contact => {
+        const lastContactDate = new Date(contact.last_contact);
+        const daysDifference = differenceInDays(today, lastContactDate);
+        return daysDifference > 15;
+      });
+      setContacts(filteredContacts);
+    } catch (error) {
+      console.error('Failed to fetch contacts:', error);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchTasks();
+      fetchContacts();
+    }, [])
+  );
 
   const handleDelete = async (taskId) => {
     console.log(`handleDelete called with id: ${taskId}`);
@@ -43,7 +62,7 @@ const HomeScreenAfterLogin = () => {
     }
   };
 
-  const renderItem = ({ item }) => {
+  const renderTaskItem = ({ item }) => {
     const taskId = item._id ? item._id.toString() : Math.random().toString();
     return (
       <View style={styles.taskItem} key={taskId}>
@@ -61,6 +80,19 @@ const HomeScreenAfterLogin = () => {
     );
   };
 
+  const renderContactItem = ({ item }) => {
+    const contactId = item._id ? item._id.toString() : Math.random().toString();
+    return (
+      <View style={styles.contactItem} key={contactId}>
+        <Text style={styles.contactEmoji}>📞</Text>
+        <View style={styles.contactTextContainer}>
+          <Text style={styles.contactName}>{item.first_name} {item.last_name}</Text>
+          <Text>Dernier contact: {format(new Date(item.last_contact), 'dd-MM-yyyy')}</Text>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.buttonContainer}>
@@ -69,13 +101,24 @@ const HomeScreenAfterLogin = () => {
           onPress={() => navigation.navigate('ContactList')}
         />
       </View>
+      <Text style={styles.contactHeader}>Contacts à recontacter :</Text>
+      {contacts.length === 0 ? (
+        <Text style={styles.noContactsText}>Aucun contact à recontacter</Text>
+      ) : (
+        <FlatList
+          data={contacts}
+          renderItem={renderContactItem}
+          keyExtractor={item => (item._id ? item._id.toString() : Math.random().toString())}
+          contentContainerStyle={styles.listContainer}
+        />
+      )}
       <Text style={styles.taskHeader}>Tâches à échéance dans les 3 jours :</Text>
       {tasks.length === 0 ? (
         <Text style={styles.noTasksText}>Aucune tâche à échéance dans les 3 jours</Text>
       ) : (
         <FlatList
           data={tasks}
-          renderItem={renderItem}
+          renderItem={renderTaskItem}
           keyExtractor={item => (item._id ? item._id.toString() : Math.random().toString())}
           contentContainerStyle={styles.listContainer}
         />
@@ -100,8 +143,39 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     width: '100%',
   },
+  contactHeader: {
+    fontSize: 16,
+    marginBottom: 10,
+    width: '100%',
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    width: '100%',
+  },
+  contactTextContainer: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  contactName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  contactEmoji: {
+    fontSize: 24,
+  },
+  noContactsText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: '#666',
+  },
   taskHeader: {
     fontSize: 16,
+    marginTop: 20,
     marginBottom: 10,
     width: '100%',
   },
