@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, View, Text, FlatList, StyleSheet } from 'react-native';
+import { Button, View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import axios from 'axios';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -83,13 +83,15 @@ const HomeScreenAfterLogin = () => {
   const renderContactItem = ({ item }) => {
     const contactId = item._id ? item._id.toString() : Math.random().toString();
     return (
-      <View style={styles.contactItem} key={contactId}>
-        <Text style={styles.contactEmoji}>📞</Text>
-        <View style={styles.contactTextContainer}>
-          <Text style={styles.contactName}>{item.first_name} {item.last_name}</Text>
-          <Text>Dernier contact: {format(new Date(item.last_contact), 'dd-MM-yyyy')}</Text>
+      <TouchableOpacity onPress={() => navigation.navigate('ContactDetails', { contactId: item._id })} key={contactId}>
+        <View style={styles.contactItem}>
+          <Text style={styles.contactEmoji}>📞</Text>
+          <View style={styles.contactTextContainer}>
+            <Text style={styles.contactName}>{item.first_name} {item.last_name}</Text>
+            <Text>Dernier contact: {format(new Date(item.last_contact), 'dd-MM-yyyy')}</Text>
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
