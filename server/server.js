@@ -44,7 +44,7 @@ app.use('/api/users', passport.authenticate('local', { session: false }), usersR
 app.use('/api/neurodivergences', neurodivergencesRoutes);
 app.use('/api/gifts', passport.authenticate('local', { session: false }), giftsRoutes);
 app.use('/api/gift_ideas', passport.authenticate('local', { session: false }), giftIdeasRoutes);
-app.use('/api/task-list', passport.authenticate('local', { session: false }), taskListRoutes);
+app.use('/api/task-list', taskListRoutes);
 
 // Démarre le serveur
 const PORT = 3000;
