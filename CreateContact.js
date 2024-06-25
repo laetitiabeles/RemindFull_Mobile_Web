@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import BASE_URL from './config';
 import axios from 'axios';
 
 const CreateContact = ({ navigation }) => {
@@ -23,9 +22,16 @@ const CreateContact = ({ navigation }) => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    axios.get(`http://${BASE_URL}/api/neurodivergences`)
-      .then(response => setNeurodivergences(response.data))
-      .catch(error => console.error(error));
+    const fetchNeurodivergences = async () => {
+      try {
+        const response = await axios.get(`http://10.0.2.2:3000/api/neurodivergences`);
+        setNeurodivergences(response.data);
+      } catch (error) {
+        console.error('Failed to fetch neurodivergences:', error);
+      }
+    };
+
+    fetchNeurodivergences();
   }, []);
 
   const onDateChange = (field, event, selectedDate) => {
@@ -59,7 +65,7 @@ const CreateContact = ({ navigation }) => {
   
     console.log('Payload:', payload); // Log the payload to verify data
   
-    axios.post(`http://${BASE_URL}/api/contacts`, payload)
+    axios.post(`http://http://10.0.2.2:3000/api/contacts`, payload)
       .then(response => {
         Alert.alert('Success', 'Contact created successfully');
         navigation.goBack();
@@ -115,7 +121,6 @@ const CreateContact = ({ navigation }) => {
         <DateTimePicker
           value={lastContactDate}
           mode="date"
-          display="default"
           onChange={(event, selectedDate) => onDateChange('last_contact', event, selectedDate)}
           maximumDate={new Date()} // Prevent future dates
         />
@@ -125,7 +130,7 @@ const CreateContact = ({ navigation }) => {
         onValueChange={itemValue => setSelectedNeurodivergence(itemValue)}
         style={styles.picker}
       >
-        <Picker.Item label="Select Neurodivergence" value="" />
+        <Picker.Item label="Select Neurodivergence" value={null} />
         {neurodivergences.map(nd => (
           <Picker.Item key={nd.id} label={nd.type} value={nd.id} />
         ))}
