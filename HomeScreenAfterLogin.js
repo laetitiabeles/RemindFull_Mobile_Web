@@ -3,7 +3,6 @@ import { Button, View, Text, FlatList, StyleSheet } from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
-import BASE_URL from './config';
 import { format, differenceInDays } from 'date-fns';
 
 const HomeScreenAfterLogin = () => {
