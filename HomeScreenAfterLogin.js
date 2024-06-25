@@ -10,6 +10,10 @@ function HomeScreenAfterLogin({ navigation }) {
           title="Contacts"
           onPress={() => navigation.navigate('ContactList')}
         />
+        <Button
+          title="View all tasks"
+          onPress={() => navigation.navigate('TaskList')}
+        />
       </View>
     </View>
   );
