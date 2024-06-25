@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Alert, TouchableOpacity, Text } from 'react-native';
 import axios from 'axios';
+import BASE_URL from './config';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns'; // Importez la fonction de formatage de date depuis date-fns
 
@@ -34,7 +35,7 @@ const SignUp = ({ navigation }) => {
       // Formatter la date au format YYYY-MM-DD pour l'envoyer au serveur
       const formattedBirthday = birthday ? format(birthday, 'yyyy-MM-dd') : null;
 
-      const response = await axios.post('http://10.0.2.2:3000/auth/register', {
+      const response = await axios.post(`http://${BASE_URL}:3000/auth/register`, {
         username,
         email,
         password,
