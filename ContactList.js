@@ -73,7 +73,7 @@ const ContactList = ({ navigation }) => {
   };
 
   const deleteContact = (contactId) => {
-    axios.delete(`http://${BASE_URL}/api/contacts/${contactId}`)
+    axios.delete(`${BASE_URL}/api/contacts/${contactId}`)
       .then(response => {
         Alert.alert('Success', 'Contact deleted successfully');
         const updatedContacts = contacts.filter(contact => contact._id !== contactId);
