@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import BASE_URL from './config';
 import axios from 'axios';
 
 const CreateContact = ({ navigation }) => {
@@ -22,7 +23,7 @@ const CreateContact = ({ navigation }) => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    axios.get(`http://10.0.2.2:3000/api/neurodivergences`)
+    axios.get(`http://${BASE_URL}/api/neurodivergences`)
       .then(response => setNeurodivergences(response.data))
       .catch(error => console.error(error));
   }, []);
@@ -43,19 +44,22 @@ const CreateContact = ({ navigation }) => {
 
   const handleSubmit = () => {
     setError('');
-
+  
     if (!contact.first_name || !contact.last_name) {
       setError('First name and last name are required.');
       return;
     }
-
-    const payload = {
-      contact, 
-      neurodivergence_id: selectedNeurodivergence };
-
-    console.log('Payload:', payload);
-
-    axios.post('http://10.0.2.2:3000/api/contacts', payload)
+  
+    const payload = { 
+      contact: { 
+        ...contact, 
+        neurodivergences: selectedNeurodivergence ? [selectedNeurodivergence] : []
+      } 
+    };
+  
+    console.log('Payload:', payload); // Log the payload to verify data
+  
+    axios.post(`http://${BASE_URL}/api/contacts`, payload)
       .then(response => {
         Alert.alert('Success', 'Contact created successfully');
         navigation.goBack();
@@ -64,6 +68,7 @@ const CreateContact = ({ navigation }) => {
         setError(error.response && error.response.data ? error.response.data.error : 'An unexpected error occurred');
       });
   };
+  
 
   return (
     <View style={styles.container}>
