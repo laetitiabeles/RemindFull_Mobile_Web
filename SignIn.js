@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import BASE_URL from './config';
 import axios from 'axios';
+import { useUser } from './UserContext';
 
 const SignIn = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const { setUser } = useUser();
 
   const handleSignIn = async () => {
     try {
+      console.log(`BASE_URL: ${BASE_URL}`);
       console.log('Attempting to log in with:', { username, password });
   
-      const response = await axios.post('http://10.0.2.2:3000/auth/login', {
+      const response = await axios.post(`http://10.0.2.2:3000/auth/login`, {
         username,
         password,
       });
@@ -20,6 +24,8 @@ const SignIn = ({ navigation }) => {
   
       if (response.status === 200) {
         Alert.alert('Success', 'User logged in successfully');
+        console.log('User data:', response.data.user);
+        setUser(response.data.user);
         navigation.navigate('HomeAfterLogin');
       } else {
         console.log('Non-success status received:', response.status);
