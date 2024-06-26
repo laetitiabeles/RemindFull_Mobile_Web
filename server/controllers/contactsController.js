@@ -37,9 +37,10 @@ const getContactById = (req, res) => {
   });
 };
 
-// Créer un nouveau contact
+// Créer un nouveau contact avec gifts et gift ideas
 const createContact = (req, res) => {
   const { first_name, last_name, email, phone_number, birthday, last_contact, neurodivergences, profile_id } = req.body.contact;
+  const { gifts, gift_ideas } = req.body;
   console.log("Received body data:", req.body);
   
   db.beginTransaction(err => {
@@ -52,12 +53,13 @@ const createContact = (req, res) => {
 
     db.query(insertContactQuery, [first_name, last_name, email, phone_number, birthday, last_contact, profile_id], (err, result) => {
       if (err) {
-        return db.rollback(() => handleServerError(res, err)); //++ rollback en cas d'erreur
+        return db.rollback(() => handleServerError(res, err)); // rollback en cas d'erreur
       }
 
       const contactId = result.insertId;
       console.log("Inserted contact ID:", contactId); // Log inserted contact ID
 
+      // Insérer les neurodivergences
       if (neurodivergences && neurodivergences.length > 0) {
         const values = neurodivergences.map(neurodivergenceId => [contactId, neurodivergenceId]);
         console.log("Neurodivergences values to insert:", values); // Log neurodivergences values
@@ -69,19 +71,50 @@ const createContact = (req, res) => {
 
         db.query(insertContactNeurodivergencesQuery, [values], (err) => { 
           if (err) {
-              return db.rollback(() => handleServerError(res, err)); //++ rollback en cas d'erreur, pour assurer qu'aucun changement partiel n'est appliqué
+            return db.rollback(() => handleServerError(res, err)); // rollback en cas d'erreur
           }
-          db.commit(err => {
-              if (err) return db.rollback(() => handleServerError(res, err)); //++ rollback en cas d'erreur lors de la finalisation, assurant une transaction atomique
-              res.status(201).json({ message: 'Contact created successfully' });
-          });
         });
-      } else {
-        db.commit(err => {
-          if (err) return db.rollback(() => handleServerError(res, err)); //++ rollback en cas d'erreur même si aucune neurodivergence à insérer
-          res.status(201).json({ message: 'Contact created successfully' });
+      }
+
+      // Insérer les gifts
+      if (gifts && gifts.length > 0) {
+        const giftValues = gifts.map(gift => [contactId, gift.gift_title, gift.gift_description, gift.gift_date, profile_id]);
+        console.log("Gifts values to insert:", giftValues); // Log gifts values
+
+        const insertGiftsQuery = `
+          INSERT INTO gifts (contact_id, gift_title, gift_description, gift_date, profile_id)
+          VALUES ?
+        `;
+
+        db.query(insertGiftsQuery, [giftValues], (err) => { 
+          if (err) {
+            return db.rollback(() => handleServerError(res, err)); // rollback en cas d'erreur
+          }
         });
-      }      
+      }
+
+      // Insérer les gift ideas
+      if (gift_ideas && gift_ideas.length > 0) {
+        const giftIdeaValues = gift_ideas.map(idea => [contactId, idea.gift_title, idea.idea_description, idea.idea_date, profile_id]);
+        console.log("Gift ideas values to insert:", giftIdeaValues); // Log gift ideas values
+
+        const insertGiftIdeasQuery = `
+          INSERT INTO gift_ideas (contact_id, gift_title, idea_description, idea_date, profile_id)
+          VALUES ?
+        `;
+
+        db.query(insertGiftIdeasQuery, [giftIdeaValues], (err) => { 
+          if (err) {
+            return db.rollback(() => handleServerError(res, err)); // rollback en cas d'erreur
+          }
+        });
+      }
+
+      // Commit transaction
+      db.commit(err => {
+        if (err) return db.rollback(() => handleServerError(res, err)); // rollback en cas d'erreur lors de la finalisation
+        res.status(201).json({ message: 'Contact, gifts, and gift ideas created successfully' });
+      });
     });
   });
 };
