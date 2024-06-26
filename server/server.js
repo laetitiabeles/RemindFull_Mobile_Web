@@ -42,8 +42,8 @@ app.use('/auth', authRoutes);
 app.use('/api/contacts', contactsRoutes);
 app.use('/api/users', passport.authenticate('local', { session: false }), usersRoutes);
 app.use('/api/neurodivergences', neurodivergencesRoutes);
-app.use('/api/gifts', passport.authenticate('local', { session: false }), giftsRoutes);
-app.use('/api/gift_ideas', passport.authenticate('local', { session: false }), giftIdeasRoutes);
+app.use('/api/gifts', giftsRoutes);
+app.use('/api/gift_ideas', giftIdeasRoutes);
 app.use('/api/task-list', taskListRoutes);
 
 // Démarre le serveur
