@@ -62,6 +62,9 @@ const ContactList = () => {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.createButton} onPress={() => navigation.navigate('CreateContact')}>
+        <Text style={styles.createButtonText}>Create Contact</Text>
+      </TouchableOpacity>
       <TextInput
         style={styles.searchInput}
         placeholder="Search contacts..."
@@ -82,6 +85,17 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: '#fff',
+  },
+  createButton: {
+    backgroundColor: '#007bff',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  createButtonText: {
+    color: '#fff',
+    fontSize: 18,
   },
   searchInput: {
     height: 40,
