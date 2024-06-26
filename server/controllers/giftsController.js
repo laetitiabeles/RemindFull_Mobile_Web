@@ -9,7 +9,7 @@ const handleServerError = (res, err) => {
 // Récupérer tous les cadeaux
 const getAllGifts = (req, res) => {
   const query = `
-    SELECT g.gift_id, g.contact_id, g.gift_description, g.gift_date, g.profile_id, p.user_id
+    SELECT g.gift_id, g.contact_id, g.gift_title, g.gift_description, g.gift_date, g.profile_id, p.user_id
     FROM gifts g
     LEFT JOIN profile p ON g.profile_id = p.profile_id
   `;
@@ -25,7 +25,7 @@ const getGiftById = (req, res) => {
   const giftId = req.params.giftId;
 
   const query = `
-    SELECT g.gift_id, g.contact_id, g.gift_description, g.gift_date, g.profile_id, p.user_id
+    SELECT g.gift_id, g.contact_id, g.gift_title, g.gift_description, g.gift_date, g.profile_id, p.user_id
     FROM gifts g
     LEFT JOIN profile p ON g.profile_id = p.profile_id
     WHERE g.gift_id = ?
@@ -40,25 +40,42 @@ const getGiftById = (req, res) => {
   });
 };
 
+// Récupérer les cadeaux par contact ID
+const getGiftsByContactId = (req, res) => {
+  const contactId = req.params.contactId;
+  console.log(`Executing getGiftsByContactId query for contact ID: ${contactId}`);
+
+  const query = `
+    SELECT g.gift_id, g.contact_id, g.gift_title, g.gift_description, g.gift_date, g.profile_id
+    FROM gifts g
+    WHERE g.contact_id = ?
+  `;
+
+  db.query(query, [contactId], (err, results) => {
+    if (err) return handleServerError(res, err);
+    console.log("getGiftsByContactId query executed successfully, results:", results);
+    res.json(results);
+  });
+};
+
 // Créer un nouveau cadeau
 const createGift = (req, res) => {
-  const { contact_id, gift_description, gift_date, profile_id } = req.body;
+  const { contact_id, gift_title, gift_description, gift_date, profile_id } = req.body;
 
-  // Utilisation des transactions pour garantir l'intégrité des données
   db.beginTransaction(err => {
     if (err) return handleServerError(res, err);
 
     const query = `
-      INSERT INTO gifts (contact_id, gift_description, gift_date, profile_id)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO gifts (contact_id, gift_title, gift_description, gift_date, profile_id)
+      VALUES (?, ?, ?, ?, ?)
     `;
 
-    db.query(query, [contact_id, gift_description, gift_date, profile_id], (err, result) => {
+    db.query(query, [contact_id, gift_title, gift_description, gift_date, profile_id], (err, result) => {
       if (err) {
-        return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
+        return db.rollback(() => handleServerError(res, err));
       }
       db.commit(err => {
-        if (err) return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur lors de la finalisation
+        if (err) return db.rollback(() => handleServerError(res, err));
         res.status(201).json({ message: 'Gift created successfully' });
       });
     });
@@ -68,24 +85,23 @@ const createGift = (req, res) => {
 // Mettre à jour un cadeau par ID
 const updateGift = (req, res) => {
   const giftId = req.params.giftId;
-  const { contact_id, gift_description, gift_date, profile_id } = req.body;
+  const { contact_id, gift_title, gift_description, gift_date, profile_id } = req.body;
 
-  // Utilisation des transactions pour garantir l'intégrité des données
   db.beginTransaction(err => {
     if (err) return handleServerError(res, err);
 
     const query = `
       UPDATE gifts
-      SET contact_id = ?, gift_description = ?, gift_date = ?, profile_id = ?
+      SET contact_id = ?, gift_title = ?, gift_description = ?, gift_date = ?, profile_id = ?
       WHERE gift_id = ?
     `;
 
-    db.query(query, [contact_id, gift_description, gift_date, profile_id, giftId], (err, result) => {
+    db.query(query, [contact_id, gift_title, gift_description, gift_date, profile_id, giftId], (err, result) => {
       if (err) {
-        return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
+        return db.rollback(() => handleServerError(res, err));
       }
       db.commit(err => {
-        if (err) return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur lors de la finalisation
+        if (err) return db.rollback(() => handleServerError(res, err));
         res.json({ message: 'Gift updated successfully' });
       });
     });
@@ -120,6 +136,7 @@ const deleteGift = (req, res) => {
 module.exports = {
   getAllGifts,
   getGiftById,
+  getGiftsByContactId,
   createGift,
   updateGift,
   deleteGift,

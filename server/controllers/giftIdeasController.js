@@ -9,11 +9,11 @@ const handleServerError = (res, err) => {
 // Récupérer toutes les idées cadeaux
 const getAllGiftIdeas = (req, res) => {
   const query = `
-    SELECT gi.idea_id, gi.contact_id, gi.idea_description, gi.idea_date, gi.profile_id, p.user_id
+    SELECT gi.idea_id, gi.contact_id, gi.gift_title, gi.idea_description, gi.idea_date, gi.profile_id, p.user_id
     FROM gift_ideas gi
     LEFT JOIN profile p ON gi.profile_id = p.profile_id
   `;
-  
+
   db.query(query, (err, results) => {
     if (err) return handleServerError(res, err); // Utilisation de la fonction de gestion des erreurs
     res.json(results);
@@ -25,7 +25,7 @@ const getGiftIdeaById = (req, res) => {
   const ideaId = req.params.ideaId;
 
   const query = `
-    SELECT gi.idea_id, gi.contact_id, gi.idea_description, gi.idea_date, gi.profile_id, p.user_id
+    SELECT gi.idea_id, gi.contact_id, gi.gift_title, gi.idea_description, gi.idea_date, gi.profile_id, p.user_id
     FROM gift_ideas gi
     LEFT JOIN profile p ON gi.profile_id = p.profile_id
     WHERE gi.idea_id = ?
@@ -40,19 +40,41 @@ const getGiftIdeaById = (req, res) => {
   });
 };
 
+// Récupérer les idées cadeaux par contact ID
+const getGiftIdeasByContactId = (req, res) => {
+  const contactId = req.params.contactId;
+  console.log(`Executing getGiftIdeasByContactId query for contact ID: ${contactId}`);
+
+  const query = `
+    SELECT gi.idea_id, gi.contact_id, gi.gift_title, gi.idea_description, gi.idea_date
+    FROM gift_ideas gi
+    WHERE gi.contact_id = ?
+  `;
+
+  db.query(query, [contactId], (err, results) => {
+    if (err) return handleServerError(res, err);
+    if (results.length === 0) {
+      console.log(`No gift ideas found for contact ID: ${contactId}`);
+      return res.status(404).json({ error: 'No gift ideas found' });
+    }
+    console.log("getGiftIdeasByContactId query executed successfully, results:", results);
+    res.json(results);
+  });
+};
+
 // Créer une nouvelle idée cadeau
 const createGiftIdea = (req, res) => {
-  const { contact_id, idea_description, idea_date, profile_id } = req.body;
+  const { contact_id, gift_title, idea_description, idea_date, profile_id } = req.body;
 
   db.beginTransaction(err => {
     if (err) return handleServerError(res, err); // Utilisation de transactions
 
     const query = `
-      INSERT INTO gift_ideas (contact_id, idea_description, idea_date, profile_id)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO gift_ideas (contact_id, gift_title, idea_description, idea_date, profile_id)
+      VALUES (?, ?, ?, ?, ?)
     `;
 
-    db.query(query, [contact_id, idea_description, idea_date, profile_id], (err, result) => {
+    db.query(query, [contact_id, gift_title, idea_description, idea_date, profile_id], (err, result) => {
       if (err) {
         return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
       }
@@ -67,18 +89,18 @@ const createGiftIdea = (req, res) => {
 // Mettre à jour une idée cadeau par ID
 const updateGiftIdea = (req, res) => {
   const ideaId = req.params.ideaId;
-  const { contact_id, idea_description, idea_date, profile_id } = req.body;
+  const { contact_id, gift_title, idea_description, idea_date, profile_id } = req.body;
 
   db.beginTransaction(err => {
     if (err) return handleServerError(res, err); // Utilisation de transactions
 
     const query = `
       UPDATE gift_ideas
-      SET contact_id = ?, idea_description = ?, idea_date = ?, profile_id = ?
+      SET contact_id = ?, gift_title = ?, idea_description = ?, idea_date = ?, profile_id = ?
       WHERE idea_id = ?
     `;
 
-    db.query(query, [contact_id, idea_description, idea_date, profile_id, ideaId], (err, result) => {
+    db.query(query, [contact_id, gift_title, idea_description, idea_date, profile_id, ideaId], (err, result) => {
       if (err) {
         return db.rollback(() => handleServerError(res, err)); // Rollback en cas d'erreur
       }
@@ -117,6 +139,7 @@ const deleteGiftIdea = (req, res) => {
 module.exports = {
   getAllGiftIdeas,
   getGiftIdeaById,
+  getGiftIdeasByContactId,
   createGiftIdea,
   updateGiftIdea,
   deleteGiftIdea,
