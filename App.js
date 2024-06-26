@@ -14,6 +14,10 @@ import CreateTask from './CreateTask';
 import UpdateTask from './UpdateTask';
 import TaskDetails from './TaskDetails';
 import ContactDetails from './ContactDetails';
+import AddGift from './AddGift';
+import UpdateGift from './UpdateGift';
+import AddGiftIdea from './AddGiftIdea';
+import UpdateGiftIdea from './UpdateGiftIdea';
 import { UserProvider } from './UserContext';
 
 
@@ -34,6 +38,10 @@ function App() {
           <Stack.Screen name="CreateContact" component={CreateContact} />
           <Stack.Screen name="UpdateContact" component={UpdateContact} />
           <Stack.Screen name="ContactDetails" component={ContactDetails} />
+          <Stack.Screen name="AddGift" component={AddGift} />
+          <Stack.Screen name="UpdateGift" component={UpdateGift} />
+          <Stack.Screen name="AddGiftIdea" component={AddGiftIdea} />
+          <Stack.Screen name="UpdateGiftIdea" component={UpdateGiftIdea} />
           <Stack.Screen name="TaskList" component={TaskList} />
           <Stack.Screen name="CreateTask" component={CreateTask} />
           <Stack.Screen name="UpdateTask" component={UpdateTask} />
