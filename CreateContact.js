@@ -76,7 +76,12 @@ const CreateContact = ({ navigation }) => {
   };
 
   const addGift = () => {
-    setGifts([...gifts, { title: giftTitle, description: giftDescription, date: giftDate.toISOString().split('T')[0] }]);
+    const newGift = {
+      title: giftTitle,
+      description: giftDescription,
+      date: giftDate.toISOString().split('T')[0]  // Format the date as YYYY-MM-DD
+    };
+    setGifts([...gifts, newGift]);
     setGiftTitle('');
     setGiftDescription('');
     setGiftDate(new Date());
@@ -84,7 +89,12 @@ const CreateContact = ({ navigation }) => {
   };
 
   const addGiftIdea = () => {
-    setGiftIdeas([...giftIdeas, { title: ideaTitle, description: ideaDescription, date: ideaDate.toISOString().split('T')[0] }]);
+    const newIdea = {
+      title: ideaTitle,
+      description: ideaDescription,
+      date: ideaDate.toISOString().split('T')[0]  // Format the date as YYYY-MM-DD
+    };
+    setGiftIdeas([...giftIdeas, newIdea]);
     setIdeaTitle('');
     setIdeaDescription('');
     setIdeaDate(new Date());
@@ -99,13 +109,21 @@ const CreateContact = ({ navigation }) => {
       return;
     }
   
-    const payload = { 
-      contact: { 
-        ...contact, 
+    const payload = {
+      contact: {
+        ...contact,
         neurodivergences: selectedNeurodivergence ? [selectedNeurodivergence] : [],
-        gifts: gifts,
-        gift_ideas: giftIdeas
-      } 
+        gifts: gifts.map(gift => ({
+          title: gift.title,
+          description: gift.description,
+          date: gift.date
+        })),
+        gift_ideas: giftIdeas.map(idea => ({
+          title: idea.title,
+          description: idea.description,
+          date: idea.date
+        }))
+      }
     };
   
     console.log('Payload:', payload); // Log the payload to verify data
@@ -120,6 +138,7 @@ const CreateContact = ({ navigation }) => {
         setError(error.response && error.response.data ? error.response.data.error : 'An unexpected error occurred');
       });
   };
+  
 
   return (
     <View style={styles.container}>
@@ -313,14 +332,6 @@ const styles = StyleSheet.create({
   },
   error: {
     color: 'red',
-    marginBottom: 10,
-  },
-  giftContainer: {
-    marginTop: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
     marginBottom: 10,
   },
   listItem: {
