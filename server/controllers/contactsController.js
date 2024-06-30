@@ -1,132 +1,156 @@
 const db = require('../db');
+
 const handleServerError = (res, err) => {
-  console.error('Database error: ', err);
+  console.error('Database error:', err);
   res.status(500).json({ error: 'Internal server error' });
 };
 
-// Récupérer tous les contacts avec leurs neurodivergences
 const getAllContacts = (req, res) => {
   const query = `
-    SELECT c._id, c.first_name, c.last_name, c.email, c.phone_number, c.birthday, c.last_contact, n.type AS neurodivergence 
+    SELECT c._id, c.first_name, c.last_name, c.email, c.phone_number, c.birthday, c.last_contact, GROUP_CONCAT(n.type) AS neurodivergences
     FROM contact c
     LEFT JOIN contact_neurodivergence cn ON c._id = cn.contact_id
     LEFT JOIN neurodivergence n ON cn.neurodivergence_id = n.id
+    GROUP BY c._id
     ORDER BY c.first_name ASC, c.last_name ASC
   `;
   db.query(query, (err, results) => {
-    if (err) return handleServerError(res, err); //++ simplification de la gestion des erreurs
+    if (err) {
+      return handleServerError(res, err);
+    }
     res.json(results);
   });
-  console.log('GET /api/contacts');
 };
 
-// Récupérer un contact par ID
 const getContactById = (req, res) => {
   const contactId = req.params.contactId;
   const query = `
-    SELECT c._id, c.first_name, c.last_name, c.email, c.phone_number, c.birthday, c.last_contact, n.type AS neurodivergence 
+    SELECT c._id, c.first_name, c.last_name, c.email, c.phone_number, c.birthday, c.last_contact, GROUP_CONCAT(n.type) AS neurodivergences
     FROM contact c
     LEFT JOIN contact_neurodivergence cn ON c._id = cn.contact_id
     LEFT JOIN neurodivergence n ON cn.neurodivergence_id = n.id
     WHERE c._id = ?
+    GROUP BY c._id
   `;
   db.query(query, [contactId], (err, results) => {
-    if (err) return handleServerError(res, err); //++ Appel de la fonction de gestion des erreurs uniforme
-    if (results.length === 0) return res.status(404).json({ error: 'Contact not found' });
+    if (err) {
+      return handleServerError(res, err);
+    }
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
     res.json(results[0]);
   });
 };
 
-// Créer un nouveau contact avec gifts et gift ideas
+// Créer un nouveau contact
 const createContact = (req, res) => {
-  const { first_name, last_name, email, phone_number, birthday, last_contact, neurodivergences, profile_id } = req.body.contact;
-  const { gifts, gift_ideas } = req.body;
-  console.log("Received body data:", req.body);
-  
+  const { first_name, last_name, email, phone_number, birthday, last_contact, profile_id, gifts, gift_ideas, neurodivergences } = req.body.contact;
+
+  console.log("Received contact data:", req.body.contact);
+
   db.beginTransaction(err => {
-    if (err) return handleServerError(res, err);
+    if (err) {
+      return handleServerError(res, err);
+    }
 
     const insertContactQuery = `
       INSERT INTO contact (first_name, last_name, email, phone_number, birthday, last_contact, profile_id)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
-
     db.query(insertContactQuery, [first_name, last_name, email, phone_number, birthday, last_contact, profile_id], (err, result) => {
       if (err) {
-        return db.rollback(() => handleServerError(res, err)); // rollback en cas d'erreur
+        console.error('Error inserting contact:', err);
+        return db.rollback(() => handleServerError(res, err));
       }
 
       const contactId = result.insertId;
-      console.log("Inserted contact ID:", contactId); // Log inserted contact ID
+      console.log('Inserted contact ID:', contactId);
 
-      // Insérer les neurodivergences
-      if (neurodivergences && neurodivergences.length > 0) {
-        const values = neurodivergences.map(neurodivergenceId => [contactId, neurodivergenceId]);
-        console.log("Neurodivergences values to insert:", values); // Log neurodivergences values
+      const insertNeurodivergences = (callback) => {
+        if (neurodivergences && neurodivergences.length > 0) {
+          const values = neurodivergences.map(ndId => [contactId, ndId]);
+          const insertQuery = `
+            INSERT INTO contact_neurodivergence (contact_id, neurodivergence_id)
+            VALUES ?
+          `;
+          db.query(insertQuery, [values], (err) => {
+            if (err) {
+              console.error('Error inserting neurodivergences:', err);
+              return db.rollback(() => handleServerError(res, err));
+            }
+            callback();
+          });
+        } else {
+          callback();
+        }
+      };
 
-        const insertContactNeurodivergencesQuery = `
-          INSERT INTO contact_neurodivergence (contact_id, neurodivergence_id)
-          VALUES ?
-        `;
+      const insertGifts = (callback) => {
+        if (gifts && gifts.length > 0) {
+          const values = gifts.map(gift => [contactId, gift.title, gift.description, gift.date]);
+          const insertQuery = `
+            INSERT INTO gifts (contact_id, gift_title, gift_description, gift_date)
+            VALUES ?
+          `;
+          console.log('Inserting gifts with values:', values);
+          db.query(insertQuery, [values], (err) => {
+            if (err) {
+              console.error('Error inserting gifts:', err);
+              return db.rollback(() => handleServerError(res, err));
+            }
+            callback();
+          });
+        } else {
+          callback();
+        }
+      };
 
-        db.query(insertContactNeurodivergencesQuery, [values], (err) => { 
-          if (err) {
-            return db.rollback(() => handleServerError(res, err)); // rollback en cas d'erreur
-          }
+      const insertGiftIdeas = (callback) => {
+        if (gift_ideas && gift_ideas.length > 0) {
+          const values = gift_ideas.map(idea => [contactId, idea.title, idea.description, idea.date]);
+          const insertQuery = `
+            INSERT INTO gift_ideas (contact_id, gift_title, idea_description, idea_date)
+            VALUES ?
+          `;
+          console.log('Inserting gift ideas with values:', values);
+          db.query(insertQuery, [values], (err) => {
+            if (err) {
+              console.error('Error inserting gift ideas:', err);
+              return db.rollback(() => handleServerError(res, err));
+            }
+            callback();
+          });
+        } else {
+          callback();
+        }
+      };
+
+      insertNeurodivergences(() => {
+        insertGifts(() => {
+          insertGiftIdeas(() => {
+            db.commit(err => {
+              if (err) {
+                console.error('Error committing transaction:', err);
+                return db.rollback(() => handleServerError(res, err));
+              }
+              res.status(201).json({ message: 'Contact created successfully' });
+            });
+          });
         });
-      }
-
-      // Insérer les gifts
-      if (gifts && gifts.length > 0) {
-        const giftValues = gifts.map(gift => [contactId, gift.gift_title, gift.gift_description, gift.gift_date, profile_id]);
-        console.log("Gifts values to insert:", giftValues); // Log gifts values
-
-        const insertGiftsQuery = `
-          INSERT INTO gifts (contact_id, gift_title, gift_description, gift_date, profile_id)
-          VALUES ?
-        `;
-
-        db.query(insertGiftsQuery, [giftValues], (err) => { 
-          if (err) {
-            return db.rollback(() => handleServerError(res, err)); // rollback en cas d'erreur
-          }
-        });
-      }
-
-      // Insérer les gift ideas
-      if (gift_ideas && gift_ideas.length > 0) {
-        const giftIdeaValues = gift_ideas.map(idea => [contactId, idea.gift_title, idea.idea_description, idea.idea_date, profile_id]);
-        console.log("Gift ideas values to insert:", giftIdeaValues); // Log gift ideas values
-
-        const insertGiftIdeasQuery = `
-          INSERT INTO gift_ideas (contact_id, gift_title, idea_description, idea_date, profile_id)
-          VALUES ?
-        `;
-
-        db.query(insertGiftIdeasQuery, [giftIdeaValues], (err) => { 
-          if (err) {
-            return db.rollback(() => handleServerError(res, err)); // rollback en cas d'erreur
-          }
-        });
-      }
-
-      // Commit transaction
-      db.commit(err => {
-        if (err) return db.rollback(() => handleServerError(res, err)); // rollback en cas d'erreur lors de la finalisation
-        res.status(201).json({ message: 'Contact, gifts, and gift ideas created successfully' });
       });
     });
   });
 };
 
-
-// Mettre à jour un contact par ID
 const updateContact = (req, res) => {
   const contactId = req.params.contactId;
-  const { first_name, last_name, email, phone_number, birthday, last_contact, neurodivergences, profile_id } = req.body;
+  const { first_name, last_name, email, phone_number, birthday, last_contact, profile_id, neurodivergences } = req.body;
 
   db.beginTransaction(err => {
-    if (err) return handleServerError(res, err);
+    if (err) {
+      return handleServerError(res, err);
+    }
 
     const updateContactQuery = `
       UPDATE contact
@@ -156,24 +180,27 @@ const updateContact = (req, res) => {
         }
 
         if (neurodivergences && neurodivergences.length > 0) {
-          const values = neurodivergences.map(neurodivergenceId => [contactId, neurodivergenceId]);
-          const insertContactNeurodivergencesQuery = `
+          const values = neurodivergences.map(ndId => [contactId, ndId]);
+          const insertNeurodivergencesQuery = `
             INSERT INTO contact_neurodivergence (contact_id, neurodivergence_id)
             VALUES ?
           `;
-
-          db.query(insertContactNeurodivergencesQuery, [values], (err) => {
+          db.query(insertNeurodivergencesQuery, [values], (err) => {
             if (err) {
               return db.rollback(() => handleServerError(res, err));
             }
             db.commit(err => {
-              if (err) return db.rollback(() => handleServerError(res, err));
+              if (err) {
+                return db.rollback(() => handleServerError(res, err));
+              }
               res.json({ message: 'Contact updated successfully' });
             });
           });
         } else {
           db.commit(err => {
-            if (err) return db.rollback(() => handleServerError(res, err));
+            if (err) {
+              return db.rollback(() => handleServerError(res, err));
+            }
             res.json({ message: 'Contact updated successfully' });
           });
         }
@@ -182,13 +209,14 @@ const updateContact = (req, res) => {
   });
 };
 
-// Supprimer un contact par ID
 const deleteContact = (req, res) => {
   const contactId = req.params.contactId;
 
   db.beginTransaction(err => {
-    if (err) return handleServerError(res, err);
-  
+    if (err) {
+      return handleServerError(res, err);
+    }
+
     const deleteContactQuery = `
       DELETE FROM contact
       WHERE _id = ?
@@ -209,7 +237,9 @@ const deleteContact = (req, res) => {
           return db.rollback(() => handleServerError(res, err));
         }
         db.commit(err => {
-          if (err) return db.rollback(() => handleServerError(res, err));
+          if (err) {
+            return db.rollback(() => handleServerError(res, err));
+          }
           res.json({ message: 'Contact deleted successfully' });
         });
       });
