@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Alert, TouchableOpacity, Text } from 'react-native';
+import BoySignUp from './assets/Boy-sign-up.svg';
+import Arrow from './assets/arrow_left.svg';
 import axios from 'axios';
 import BASE_URL from './config';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { format } from 'date-fns'; // Importez la fonction de formatage de date depuis date-fns
+import { format } from 'date-fns';
 
 const SignUp = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [birthday, setBirthday] = useState(null); // Utilisez null pour une date non définie
+  const [birthday, setBirthday] = useState(null);
   const [date, setDate] = useState(new Date()); // État pour la date sélectionnée
   const [show, setShow] = useState(false); // État pour afficher/masquer le sélecteur de date
   const [error, setError] = useState('');
@@ -56,29 +58,42 @@ const SignUp = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.arrowContainer}>
+        <Arrow width={32} height={32} fill="#031D44"/>
+      </TouchableOpacity>
+      <BoySignUp width={350} height={350} marginTop={-40} />
       <TextInput
         style={styles.input}
-        placeholder="Username"
+        placeholder="Nom d'utilisateur"
+        placeholderTextColor="#031D44"
+        placeholderFontSize="15"
+        placeholderFontFamily="Inter-SemiBold"
         value={username}
         onChangeText={text => setUsername(text)}
       />
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder="E-mail"
+        placeholderTextColor="#031D44"
+        placeholderFontSize="15"
+        placeholderFontFamily="Inter-SemiBold"
         value={email}
         onChangeText={text => setEmail(text)}
         keyboardType="email-address"
       />
       <TextInput
         style={styles.input}
-        placeholder="Password"
+        placeholder="Mot de passe"
+        placeholderTextColor="#031D44"
+        placeholderFontSize="15"
+        placeholderFontFamily="Inter-SemiBold"
         value={password}
         onChangeText={text => setPassword(text)}
         secureTextEntry
       />
       <View>
-        <TouchableOpacity onPress={showDatePicker} style={styles.input}>
-          <Text>{birthday ? format(birthday, 'dd/MM/yyyy') : "Birthday"}</Text>
+        <TouchableOpacity onPress={showDatePicker} style={styles.birthdayInput}>
+          <Text style={styles.textBirthday}>{birthday ? format(birthday, 'dd/MM/yyyy') : "Birthday"}</Text>
         </TouchableOpacity>
         {show && (
           <DateTimePicker
@@ -90,7 +105,11 @@ const SignUp = ({ navigation }) => {
           />
         )}
       </View>
-      <Button title="S'inscrire" onPress={handleSignUp} />
+      <TouchableOpacity style={styles.signUpButton}
+      onPress={handleSignUp}
+      >
+      <Text style={styles.buttonText}>S'inscrire</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -101,15 +120,59 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
+    backgroundColor: '#F5F5DC',
+    paddingTop: 50,
+  },
+  arrowContainer: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
   },
   input: {
     width: '100%',
     marginBottom: 10,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 6,
+    borderWidth: 1.7,
+    borderColor: '#031D44',
+    borderRadius: 20,
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
+    textColor: '#031D44',
+    fontSize: 15,
+    marginBottom: 20,
+  },
+  birthdayInput: {
+    width: '120%',
+    marginBottom: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 144,
+    borderWidth: 1.7,
+    borderColor: '#031D44',
+    borderRadius: 20,
+  },
+  textBirthday: {
+    color: '#031D44',
+    fontSize: 15,
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'left',
+    jusrtifyContent: 'left',
+  },
+  signUpButton: {
+    width: '100%',
+    paddingVertical: 15,
+    paddingHorizontal: 18,
+    borderRadius: 20,
+    backgroundColor: '#031D44',
+    marginBottom: 10,
+    marginTop: 30,
+    title: '#F5F5DC',
+  },
+  buttonText: {
+    color: '#F5F5DC',
+    fontSize: 15,
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
   },
 });
 
