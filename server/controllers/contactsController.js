@@ -68,19 +68,36 @@ const createContact = (req, res) => {
       console.log('Inserted contact ID:', contactId);
 
       const insertNeurodivergences = (callback) => {
-        if (neurodivergences && neurodivergences.length > 0) {
-          const values = neurodivergences.map(ndId => [contactId, ndId]);
-          const insertQuery = `
-            INSERT INTO contact_neurodivergence (contact_id, neurodivergence_id)
-            VALUES ?
-          `;
-          db.query(insertQuery, [values], (err) => {
-            if (err) {
-              console.error('Error inserting neurodivergences:', err);
-              return db.rollback(() => handleServerError(res, err));
-            }
+        if (neurodivergences) {
+          const neurodivergencesArray = neurodivergences.split(',').map(nd => nd.trim());
+          if (neurodivergencesArray.length > 0) {
+            const getNeurodivergenceIdsQuery = `
+              SELECT id FROM neurodivergence WHERE type IN (?)
+            `;
+            db.query(getNeurodivergenceIdsQuery, [neurodivergencesArray], (err, results) => {
+              if (err) {
+                console.error('Error fetching neurodivergence ids:', err);
+                return db.rollback(() => handleServerError(res, err));
+              }
+
+              const neurodivergenceIds = results.map(result => result.id);
+              const values = neurodivergenceIds.map(ndId => [contactId, ndId]);
+
+              const insertQuery = `
+                INSERT INTO contact_neurodivergence (contact_id, neurodivergence_id)
+                VALUES ?
+              `;
+              db.query(insertQuery, [values], (err) => {
+                if (err) {
+                  console.error('Error inserting neurodivergences:', err);
+                  return db.rollback(() => handleServerError(res, err));
+                }
+                callback();
+              });
+            });
+          } else {
             callback();
-          });
+          }
         } else {
           callback();
         }
@@ -143,6 +160,7 @@ const createContact = (req, res) => {
   });
 };
 
+
 const updateContact = (req, res) => {
   const contactId = req.params.contactId;
   const { first_name, last_name, email, phone_number, birthday, last_contact, profile_id, neurodivergences } = req.body;
@@ -179,23 +197,45 @@ const updateContact = (req, res) => {
           return db.rollback(() => handleServerError(res, err));
         }
 
-        if (neurodivergences && neurodivergences.length > 0) {
-          const values = neurodivergences.map(ndId => [contactId, ndId]);
-          const insertNeurodivergencesQuery = `
-            INSERT INTO contact_neurodivergence (contact_id, neurodivergence_id)
-            VALUES ?
-          `;
-          db.query(insertNeurodivergencesQuery, [values], (err) => {
-            if (err) {
-              return db.rollback(() => handleServerError(res, err));
-            }
+        if (neurodivergences) {
+          const neurodivergencesArray = neurodivergences.split(',').map(nd => nd.trim());
+          if (neurodivergencesArray.length > 0) {
+            const getNeurodivergenceIdsQuery = `
+              SELECT id FROM neurodivergence WHERE type IN (?)
+            `;
+            db.query(getNeurodivergenceIdsQuery, [neurodivergencesArray], (err, results) => {
+              if (err) {
+                console.error('Error fetching neurodivergence ids:', err);
+                return db.rollback(() => handleServerError(res, err));
+              }
+
+              const neurodivergenceIds = results.map(result => result.id);
+              const values = neurodivergenceIds.map(ndId => [contactId, ndId]);
+
+              const insertNeurodivergencesQuery = `
+                INSERT INTO contact_neurodivergence (contact_id, neurodivergence_id)
+                VALUES ?
+              `;
+              db.query(insertNeurodivergencesQuery, [values], (err) => {
+                if (err) {
+                  return db.rollback(() => handleServerError(res, err));
+                }
+                db.commit(err => {
+                  if (err) {
+                    return db.rollback(() => handleServerError(res, err));
+                  }
+                  res.json({ message: 'Contact updated successfully' });
+                });
+              });
+            });
+          } else {
             db.commit(err => {
               if (err) {
                 return db.rollback(() => handleServerError(res, err));
               }
               res.json({ message: 'Contact updated successfully' });
             });
-          });
+          }
         } else {
           db.commit(err => {
             if (err) {
@@ -208,6 +248,7 @@ const updateContact = (req, res) => {
     });
   });
 };
+
 
 const deleteContact = (req, res) => {
   const contactId = req.params.contactId;
