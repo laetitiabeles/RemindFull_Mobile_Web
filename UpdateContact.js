@@ -8,20 +8,14 @@ import BASE_URL from './config';
 const UpdateContact = ({ route, navigation }) => {
   const { contact } = route.params;
 
-  // Function to format the date as yyyy-MM-dd
+  // Function to format the date as JJ-MM-AA
   const formatDate = (date) => {
-    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
-  };
-
-  // Convert the date to local time
-  const toLocalDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+    return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
   };
 
   // Format the initial dates
-  const initialBirthday = contact.birthday ? toLocalDate(contact.birthday) : new Date();
-  const initialLastContact = contact.last_contact ? toLocalDate(contact.last_contact) : new Date();
+  const initialBirthday = contact.birthday ? new Date(contact.birthday) : new Date();
+  const initialLastContact = contact.last_contact ? new Date(contact.last_contact) : new Date();
 
   const [updatedContact, setUpdatedContact] = useState({
     ...contact,
@@ -66,8 +60,8 @@ const UpdateContact = ({ route, navigation }) => {
   const handleUpdate = () => {
     const updatedContactWithISO = {
       ...updatedContact,
-      birthday: birthdayDate.toISOString().split('T')[0],
-      last_contact: lastContactDate.toISOString().split('T')[0],
+      birthday: new Date(birthdayDate.getTime() - birthdayDate.getTimezoneOffset() * 60000).toISOString().split('T')[0],
+      last_contact: new Date(lastContactDate.getTime() - lastContactDate.getTimezoneOffset() * 60000).toISOString().split('T')[0],
     };
 
     axios.put(`${BASE_URL}/api/contacts/${updatedContact._id}`, {...updatedContactWithISO, neurodivergence_id: selectedNeurodivergence})
