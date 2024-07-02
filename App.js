@@ -3,7 +3,6 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from './HomeScreen';
 import SignUpScreen from './SignUp';
-import SignInScreen from './SignIn';
 import HomeScreenAfterLogin from './HomeScreenAfterLogin';
 import ContactList from './ContactList';
 import CreateContact from './CreateContact';
@@ -28,7 +27,6 @@ function App() {
         <Stack.Navigator initialRouteName="Home">
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: false }}/>
-          <Stack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: false }} />
           <Stack.Screen name="HomeAfterLogin" component={HomeScreenAfterLogin} options={{ headerShown: false }} />
           <Stack.Screen name="ContactList" component={ContactList} />
           <Stack.Screen name="CreateContact" component={CreateContact} />
