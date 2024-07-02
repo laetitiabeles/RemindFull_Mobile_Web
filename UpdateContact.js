@@ -3,18 +3,25 @@ import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert } fr
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
+import BASE_URL from './config';
 
 const UpdateContact = ({ route, navigation }) => {
   const { contact } = route.params;
 
-  // Function to format the date as JJ-MM-AA
+  // Function to format the date as yyyy-MM-dd
   const formatDate = (date) => {
-    return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
+    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+  };
+
+  // Convert the date to local time
+  const toLocalDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return new Date(date.getTime() + date.getTimezoneOffset() * 60000);
   };
 
   // Format the initial dates
-  const initialBirthday = contact.birthday ? new Date(contact.birthday) : new Date();
-  const initialLastContact = contact.last_contact ? new Date(contact.last_contact) : new Date();
+  const initialBirthday = contact.birthday ? toLocalDate(contact.birthday) : new Date();
+  const initialLastContact = contact.last_contact ? toLocalDate(contact.last_contact) : new Date();
 
   const [updatedContact, setUpdatedContact] = useState({
     ...contact,
@@ -29,7 +36,7 @@ const UpdateContact = ({ route, navigation }) => {
   const [selectedNeurodivergence, setSelectedNeurodivergence] = useState(contact.neurodivergence_id);
 
   useEffect(() => {
-    axios.get(`http://10.0.2.2:3000/api/neurodivergences`)
+    axios.get(`${BASE_URL}/api/neurodivergences`)
       .then(response => setNeurodivergences(response.data))
       .catch(error => console.error('Failed to load neurodivergences:', error));
   }, []);
@@ -63,7 +70,7 @@ const UpdateContact = ({ route, navigation }) => {
       last_contact: lastContactDate.toISOString().split('T')[0],
     };
 
-    axios.put(`http://10.0.2.2:3000/api/contacts/${updatedContact._id}`, {...updatedContactWithISO, neurodivergence_id: selectedNeurodivergence})
+    axios.put(`${BASE_URL}/api/contacts/${updatedContact._id}`, {...updatedContactWithISO, neurodivergence_id: selectedNeurodivergence})
       .then(() => {
         Alert.alert('Contact modifié avec succès');
         navigation.goBack();
