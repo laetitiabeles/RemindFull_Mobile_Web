@@ -63,7 +63,7 @@ const ContactList = () => {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.createButton} onPress={() => navigation.navigate('CreateContact')}>
-        <Text style={styles.createButtonText}>Create Contact</Text>
+        <Text style={styles.createButtonText}>Créer un contact</Text>
       </TouchableOpacity>
       <TextInput
         style={styles.searchInput}
@@ -87,22 +87,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   createButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#031D44',
+    borderRadius: 20,
     padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 20,
+    marginVertical: 10,
+    width: '100%',
   },
   createButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
   },
   searchInput: {
     height: 40,
+    fontFamily: 'Inter-Regular',
     borderColor: '#ddd',
     borderWidth: 1,
+    borderRadius: 20,
     marginBottom: 20,
-    paddingHorizontal: 10,
+    paddingLeft: 20,
   },
   contactItem: {
     flexDirection: 'row',
