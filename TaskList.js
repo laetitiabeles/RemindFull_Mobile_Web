@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import BASE_URL from './config';
 import { format } from 'date-fns';
+import Arrow from './assets/arrow_left.svg';
 
 const formattedDate = (date) => {
   return format(new Date(date), 'dd-MM-yyyy');
@@ -55,9 +56,9 @@ const TaskList = () => {
         />
         <View style={styles.taskTextContainer}>
           <Text style={styles.taskTitle}>{item.task}</Text>
-          <Text>{item.task_description}</Text>
-          <Text>Priorité: {item.priority}</Text>
-          <Text>Échéance: {formattedDate(item.due_date)}</Text>
+          <Text style={styles.taskText}>{item.task_description}</Text>
+          <Text style={styles.taskText}>Priorité: {item.priority}</Text>
+          <Text style={styles.taskText}>Échéance: {formattedDate(item.due_date)}</Text>
         </View>
         <TouchableOpacity
           style={styles.editButton}
@@ -71,6 +72,9 @@ const TaskList = () => {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.arrowContainer}>
+        <Arrow width={32} height={32} fill="#FBFBF1"/>
+      </TouchableOpacity>
       <TouchableOpacity style={styles.createButton} onPress={() => navigation.navigate('CreateTask', { fetchTasks })}>
         <Text style={styles.createButtonText}>Créer une tâche</Text>
       </TouchableOpacity>
@@ -93,16 +97,23 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#fff',
   },
+  arrowContainer: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+  },
   createButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#031D44',
+    borderRadius: 20,
     padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 20,
+    marginVertical: 10,
+    width: '100%',
   },
   createButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
   },
   taskItem: {
     flexDirection: 'row',
@@ -114,10 +125,18 @@ const styles = StyleSheet.create({
   taskTextContainer: {
     flex: 1,
     marginLeft: 10,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
   },
   taskTitle: {
+    fontFamily: 'Inter-SemiBold',
+    color: '#031D44',
     fontSize: 18,
-    fontWeight: 'bold',
+  },
+  taskText: {
+    fontFamily: 'Inter-Regular',
+    color: '#031D44',
+    fontSize: 14,
   },
   noTasksText: {
     textAlign: 'center',
@@ -126,7 +145,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   editButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#031D44',
     borderRadius: 25,
     width: 40,
     height: 40,
