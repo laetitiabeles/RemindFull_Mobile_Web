@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Alert, TouchableOpacity, Text } from 'react-native';
-import BoySignUp from './assets/Boy-sign-up.svg';
+import Talking from './assets/talking.svg';
 import Arrow from './assets/arrow_left.svg';
+import Background from './assets/background-signup.svg';
 import axios from 'axios';
 import BASE_URL from './config';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -58,10 +59,11 @@ const SignUp = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <Background style={styles.background} />
       <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.arrowContainer}>
-        <Arrow width={32} height={32} fill="#031D44"/>
+        <Arrow width={32} height={32} fill="#FBFBF1"/>
       </TouchableOpacity>
-      <BoySignUp width={350} height={350} marginTop={-40} />
+      <Talking width={350} height={350} marginTop={-50} />
       <TextInput
         style={styles.input}
         placeholder="Nom d'utilisateur"
@@ -93,7 +95,7 @@ const SignUp = ({ navigation }) => {
       />
       <View>
         <TouchableOpacity onPress={showDatePicker} style={styles.birthdayInput}>
-          <Text style={styles.textBirthday}>{birthday ? format(birthday, 'dd/MM/yyyy') : "Birthday"}</Text>
+          <Text style={styles.textBirthday}>{birthday ? format(birthday, 'dd/MM/yyyy') : "Date de naissance"}</Text>
         </TouchableOpacity>
         {show && (
           <DateTimePicker
@@ -120,8 +122,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
-    backgroundColor: '#F5F5DC',
+    backgroundColor: '#FBFBF1',
     paddingTop: 50,
+  },
+  background: {
+    position: 'absolute',
+    top: -200,
+    left: -20,
+    right: 0,
+    bottom: 0,
+    width: '120%',
+    height: '100%',
   },
   arrowContainer: {
     position: 'absolute',
@@ -146,7 +157,7 @@ const styles = StyleSheet.create({
     width: '120%',
     marginBottom: 10,
     paddingVertical: 10,
-    paddingHorizontal: 144,
+    paddingHorizontal: 107,
     borderWidth: 1.7,
     borderColor: '#031D44',
     borderRadius: 20,
@@ -166,10 +177,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#031D44',
     marginBottom: 10,
     marginTop: 30,
-    title: '#F5F5DC',
   },
   buttonText: {
-    color: '#F5F5DC',
+    color: '#FBFBF1',
     fontSize: 15,
     fontFamily: 'Inter-SemiBold',
     textAlign: 'center',
