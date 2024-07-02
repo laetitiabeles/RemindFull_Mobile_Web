@@ -28,7 +28,7 @@ function App() {
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: false }}/>
           <Stack.Screen name="HomeAfterLogin" component={HomeScreenAfterLogin} options={{ headerShown: false }} />
-          <Stack.Screen name="ContactList" component={ContactList} />
+          <Stack.Screen name="ContactList" component={ContactList} options={{ headerShown: false }} />
           <Stack.Screen name="CreateContact" component={CreateContact} />
           <Stack.Screen name="UpdateContact" component={UpdateContact} />
           <Stack.Screen name="ContactDetails" component={ContactDetails} />
@@ -36,7 +36,7 @@ function App() {
           <Stack.Screen name="UpdateGift" component={UpdateGift} />
           <Stack.Screen name="AddGiftIdea" component={AddGiftIdea} />
           <Stack.Screen name="UpdateGiftIdea" component={UpdateGiftIdea} />
-          <Stack.Screen name="TaskList" component={TaskList} />
+          <Stack.Screen name="TaskList" component={TaskList} options={{ headerShown: false }} />
           <Stack.Screen name="CreateTask" component={CreateTask} />
           <Stack.Screen name="UpdateTask" component={UpdateTask} />
           <Stack.Screen name="TaskDetails" component={TaskDetails} />
