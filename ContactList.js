@@ -117,6 +117,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ddd',
   },
   contactText: {
+    fontFamily: 'Inter-Regular',
+    color: '#031D44',
     fontSize: 18,
   },
   buttonContainer: {
