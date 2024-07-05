@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import BASE_URL from './config';
 
 const UpdateContact = ({ route, navigation }) => {
-  const { contact } = route.params;
+  const { contact, onUpdate } = route.params; // Ajouter onUpdate
 
   // Function to format the date as JJ-MM-AA
   const formatDate = (date) => {
@@ -67,6 +67,7 @@ const UpdateContact = ({ route, navigation }) => {
     axios.put(`${BASE_URL}/api/contacts/${updatedContact._id}`, {...updatedContactWithISO, neurodivergence_id: selectedNeurodivergence})
       .then(() => {
         Alert.alert('Contact modifié avec succès');
+        if (onUpdate) onUpdate(updatedContactWithISO); // Appel de la fonction de rappel onUpdate
         navigation.goBack();
       })
       .catch(error => {
@@ -77,6 +78,7 @@ const UpdateContact = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Modifier le contact</Text>
       <TextInput
         style={styles.input}
         value={updatedContact.first_name}
@@ -135,7 +137,14 @@ const UpdateContact = ({ route, navigation }) => {
           <Picker.Item key={nd.id} label={nd.type} value={nd.id} />
         ))}
       </Picker>
-      <Button title="Modifier le contact" onPress={handleUpdate} />
+      <View style={styles.buttonContainer}>
+      <TouchableOpacity
+        style={styles.updateButton}
+        onPress={handleUpdate}
+      >
+        <Text style={styles.updateButtonText}>Mettre à jour</Text>
+      </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -144,20 +153,49 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    paddingTop: 80,
+  },
+  title: {
+    fontSize: 24,
+    fontFamily: 'Inter-SemiBold',
+    marginBottom: 20,
+    color: '#031D44',
   },
   input: {
+    width: '100%',
     height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
     marginBottom: 10,
-    justifyContent: 'center',
-    padding: 10
+    paddingVertical: 8,
+    paddingHorizontal: 80,
+    borderWidth: 1.7,
+    borderColor: '#031D44',
+    borderRadius: 20,
+    marginBottom: 20,
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 15,
+    textAlign: 'center',
+    color: '#031D44',
   },
   picker: {
     height: 50,
     width: '100%',
     marginBottom: 10,
-  }
+  },
+  buttonContainer: {
+    marginTop: 150,
+  },
+  updateButton: {
+    backgroundColor: '#031D44',
+    padding: 15,
+    borderRadius: 20,
+    marginTop: 20,
+  },
+  updateButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
+  },
 });
 
 export default UpdateContact;

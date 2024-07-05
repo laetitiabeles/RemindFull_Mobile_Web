@@ -72,8 +72,8 @@ const TaskList = () => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.arrowContainer}>
-        <Arrow width={32} height={32} fill="#FBFBF1"/>
+      <TouchableOpacity onPress={() => navigation.navigate('HomeAfterLogin')} style={styles.arrowContainer}>
+        <Arrow width={32} height={32} fill="#031D44"/>
       </TouchableOpacity>
       <TouchableOpacity style={styles.createButton} onPress={() => navigation.navigate('CreateTask', { fetchTasks })}>
         <Text style={styles.createButtonText}>Créer une tâche</Text>
@@ -95,12 +95,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
+    paddingTop: 100,
   },
   arrowContainer: {
     position: 'absolute',
     top: 10,
-    left: 10,
+    left: 20,
+    paddingTop: 50,
+    backgroundColor: 'white',
   },
   createButton: {
     backgroundColor: '#031D44',
@@ -145,7 +148,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   editButton: {
-    backgroundColor: '#BCEEAD',
+    backgroundColor: '#031D44',
     borderRadius: 25,
     width: 40,
     height: 40,

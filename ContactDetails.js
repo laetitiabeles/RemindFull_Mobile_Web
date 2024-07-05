@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Button } from 'react-native';
 import axios from 'axios';
+import Arrow from './assets/arrow_left.svg';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { format, parseISO, addHours } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import BASE_URL from './config';
 
 // Formater la date sans ajuster le fuseau horaire
@@ -28,7 +29,7 @@ const ContactDetails = () => {
         setContact(contactResponse.data);
 
         console.log(`Fetching gifts for contact ID: ${contactId}`);
-        const giftsResponse = await axios.get(`http://10.0.2.2:3000/api/gifts/contact/${contactId}`);
+        const giftsResponse = await axios.get(`${BASE_URL}/api/gifts/contact/${contactId}`);
         console.log('Gifts fetched successfully');
         setGifts(giftsResponse.data);
 
@@ -79,52 +80,67 @@ const ContactDetails = () => {
 
   const renderGiftItem = ({ item }) => (
     <View style={styles.itemContainer}>
-      <Text style={styles.itemText}>{item.gift_title} - {item.gift_description} - {formatDate(item.gift_date)}</Text>
-      <TouchableOpacity
-        style={styles.editButton}
-        onPress={() => navigation.navigate('UpdateGift', { gift: item })}
-      >
-        <Text style={styles.buttonText}>✏️</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => handleDeleteGift(item.gift_id)}
-      >
-        <Text style={styles.buttonText}>🗑️</Text>
-      </TouchableOpacity>
+      <View style={styles.textContainer}>
+        <Text style={styles.itemText}>{item.gift_title}</Text>
+        <Text style={styles.itemText}>{item.gift_description}</Text>
+        <Text style={styles.itemText}>{formatDate(item.gift_date)}</Text>
+      </View>
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => navigation.navigate('UpdateGift', { gift: item })}
+        >
+          <Text style={styles.buttonText}>✏️</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteGift(item.gift_id)}
+        >
+          <Text style={styles.buttonText}>🗑️</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
   const renderGiftIdeaItem = ({ item }) => (
     <View style={styles.itemContainer}>
-      <Text style={styles.itemText}>{item.gift_title} - {item.idea_description} - {formatDate(item.idea_date)}</Text>
-      <TouchableOpacity
-        style={styles.editButton}
-        onPress={() => navigation.navigate('UpdateGiftIdea', { giftIdea: item })}
-      >
-        <Text style={styles.buttonText}>✏️</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => handleDeleteGiftIdea(item.idea_id)}
-      >
-        <Text style={styles.buttonText}>🗑️</Text>
-      </TouchableOpacity>
+      <View style={styles.textContainer}>
+        <Text style={styles.itemText}>{item.gift_title}</Text>
+        <Text style={styles.itemText}>{item.idea_description}</Text>
+        <Text style={styles.itemText}>{formatDate(item.idea_date)}</Text>
+      </View>
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => navigation.navigate('UpdateGiftIdea', { giftIdea: item })}
+        >
+          <Text style={styles.buttonText}>✏️</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteGiftIdea(item.idea_id)}
+        >
+          <Text style={styles.buttonText}>🗑️</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Contact Details</Text>
-      <Text style={styles.label}>First Name: {contact.first_name}</Text>
-      <Text style={styles.label}>Last Name: {contact.last_name}</Text>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.arrowContainer}>
+        <Arrow width={32} height={32} fill="#031D44"/>
+      </TouchableOpacity>
+      <Text style={styles.title}>Détails du contact</Text>
+      <Text style={styles.label}>Prénom: {contact.first_name}</Text>
+      <Text style={styles.label}>Nom: {contact.last_name}</Text>
       <Text style={styles.label}>Email: {contact.email}</Text>
-      <Text style={styles.label}>Phone Number: {contact.phone_number}</Text>
-      <Text style={styles.label}>Birthday: {formatDate(contact.birthday)}</Text>
-      <Text style={styles.label}>Last Contact: {formatDate(contact.last_contact)}</Text>
+      <Text style={styles.label}>Téléphone: {contact.phone_number}</Text>
+      <Text style={styles.label}>Date de naissance: {formatDate(contact.birthday)}</Text>
+      <Text style={styles.label}>Dernier contact: {formatDate(contact.last_contact)}</Text>
       <Text style={styles.label}>Neurodivergence: {contact.neurodivergence}</Text>
 
-      <Text style={styles.sectionTitle}>Gifts</Text>
+      <Text style={styles.sectionTitle}>Cadeaux</Text>
       {gifts.length === 0 ? (
         <Text style={styles.noItemsText}>Pas de cadeaux trouvés</Text>
       ) : (
@@ -134,9 +150,14 @@ const ContactDetails = () => {
           keyExtractor={(item) => item.gift_id.toString()}
         />
       )}
-      <Button title="Add Gift" onPress={() => navigation.navigate('AddGift', { contactId })} />
+      <TouchableOpacity
+        style={styles.addGiftButton}
+        onPress={() => navigation.navigate('AddGift', { contactId })}
+      >
+        <Text style={styles.buttonText}>Ajouter un cadeau</Text>
+      </TouchableOpacity>
 
-      <Text style={styles.sectionTitle}>Gift Ideas</Text>
+      <Text style={styles.sectionTitle}>Idées cadeaux</Text>
       {giftIdeas.length === 0 ? (
         <Text style={styles.noItemsText}>Pas d'idées cadeaux trouvées</Text>
       ) : (
@@ -146,7 +167,12 @@ const ContactDetails = () => {
           keyExtractor={(item) => item.idea_id.toString()}
         />
       )}
-      <Button title="Add Gift Idea" onPress={() => navigation.navigate('AddGiftIdea', { contactId })} />
+      <TouchableOpacity
+        style={styles.addGiftButton}
+        onPress={() => navigation.navigate('AddGiftIdea', { contactId })}
+      >
+        <Text style={styles.buttonText}>Ajouter une idée cadeau</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -155,48 +181,82 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
+    paddingTop: 120,
+  },
+  arrowContainer: {
+    position: 'absolute',
+    top: 10,
+    left: 20,
+    paddingTop: 50,
+    backgroundColor: 'white',
   },
   title: {
+    fontFamily: 'Inter-SemiBold',
+    color: '#031D44',
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 30,
   },
   label: {
-    fontSize: 18,
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
     marginBottom: 10,
   },
   sectionTitle: {
+    fontFamily: 'Inter-SemiBold',
+    color: '#031D44',
     fontSize: 20,
-    fontWeight: 'bold',
     marginTop: 20,
     marginBottom: 10,
   },
   itemContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
   },
+  textContainer: {
+    flex: 1,
+  },
   itemText: {
     fontSize: 16,
   },
+  buttonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
   editButton: {
-    backgroundColor: '#4CAF50',
-    padding: 5,
-    borderRadius: 5,
-    marginRight: 10,
+    backgroundColor: '#031D44',
+    borderRadius: 25,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
   },
   deleteButton: {
-    backgroundColor: '#F44336',
-    padding: 5,
-    borderRadius: 5,
+    backgroundColor: '#031D44',
+    borderRadius: 25,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
+  },
+  addGiftButton: {
+    backgroundColor: '#031D44',
+    borderRadius: 20,
+    padding: 15,
+    marginVertical: 10,
+    width: '100%',
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
   },
   noItemsText: {
     fontSize: 16,

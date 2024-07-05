@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import axios from 'axios';
+import Arrow from './assets/arrow_left.svg';
 import { useNavigation } from '@react-navigation/native';
 import BASE_URL from './config';
 
@@ -31,6 +32,14 @@ const ContactList = () => {
     }
   };
 
+  const handleUpdateContact = (updatedContact) => {
+    setContacts(prevContacts =>
+      prevContacts.map(contact =>
+        contact._id === updatedContact._id ? updatedContact : contact
+      )
+    );
+  };
+
   const filteredContacts = contacts.filter(contact =>
     `${contact.first_name} ${contact.last_name}`
       .toLowerCase()
@@ -46,7 +55,7 @@ const ContactList = () => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.editButton}
-          onPress={() => navigation.navigate('UpdateContact', { contact: item })}
+          onPress={() => navigation.navigate('UpdateContact', { contact: item, onUpdate: handleUpdateContact })} // Passer onUpdate
         >
           <Text style={styles.buttonText}>✏️</Text>
         </TouchableOpacity>
@@ -62,6 +71,9 @@ const ContactList = () => {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.arrowContainer}>
+        <Arrow width={32} height={32} fill="#031D44"/>
+      </TouchableOpacity>
       <TouchableOpacity style={styles.createButton} onPress={() => navigation.navigate('CreateContact')}>
         <Text style={styles.createButtonText}>Créer un contact</Text>
       </TouchableOpacity>
@@ -84,7 +96,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
+    paddingTop: 120,
+  },
+  arrowContainer: {
+    position: 'absolute',
+    top: 10,
+    left: 20,
+    paddingTop: 50,
+    backgroundColor: 'white',
   },
   createButton: {
     backgroundColor: '#031D44',
@@ -109,6 +129,7 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
   },
   contactItem: {
+    fontFamily: 'Inter-Regular',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -125,15 +146,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   editButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 5,
-    marginRight: 10,
+    backgroundColor: '#031D44',
+    borderRadius: 25,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
   },
   deleteButton: {
-    backgroundColor: '#F44336',
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: '#031D44',
+    borderRadius: 25,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
   },
   buttonText: {
     color: '#fff',

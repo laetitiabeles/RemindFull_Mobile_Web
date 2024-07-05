@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, Alert, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Alert, StyleSheet, TouchableOpacity } from 'react-native';
 import axios from 'axios';
+import Arrow from './assets/arrow_left.svg';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { format } from 'date-fns';
 import BASE_URL from './config';
@@ -45,16 +46,26 @@ const TaskDetails = () => {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.arrowContainer}>
+        <Arrow width={32} height={32} fill="#031D44"/>
+      </TouchableOpacity>
+      <Text style={styles.titlePage}>Détails de la tâche</Text>
       <Text style={styles.title}>{task.task}</Text>
-      <Text>Description: {task.task_description}</Text>
-      <Text>Priorité: {task.priority}</Text>
-      <Text>Échéance: {format(new Date(task.due_date), 'dd-MM-yyyy')}</Text>
+      <Text style={styles.taskDescription}>Description: {task.task_description}</Text>
+      <Text style={styles.taskDescription}>Priorité: {task.priority}</Text>
+      <Text style={styles.taskDescription}>Échéance: {format(new Date(task.due_date), 'dd-MM-yyyy')}</Text>
       <View style={styles.buttonContainer}>
-        <TouchableOpacity onPress={() => navigation.navigate('UpdateTask', { taskId })}>
-          <Text style={styles.button}>✏️ Modifier</Text>
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={() => navigation.navigate('UpdateTask', { taskId })}
+        >
+          <Text style={styles.buttonText}>Modifier</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleDelete}>
-          <Text style={styles.button}>🗑️ Supprimer</Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleDelete}
+        >
+          <Text style={styles.buttonText}>Supprimer</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -65,21 +76,50 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
+    paddingTop: 120,
+  },
+  arrowContainer: {
+    position: 'absolute',
+    top: 10,
+    left: 20,
+    paddingTop: 50,
+    backgroundColor: 'white',
+  },
+  titlePage: {
+    fontSize: 24,
+    fontFamily: 'Inter-SemiBold',
+    marginBottom: 20,
+    color: '#031D44',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontFamily: 'Inter-SemiBold',
     marginBottom: 20,
+    color: '#031D44',
+  },
+  taskDescription: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    marginBottom: 10,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginTop: 20,
   },
   button: {
-    fontSize: 20,
-    marginHorizontal: 10,
+    backgroundColor: '#031D44',
+    borderRadius: 20,
+    padding: 15,
+    marginVertical: 10,
+    width: '100%',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
   },
 });
 

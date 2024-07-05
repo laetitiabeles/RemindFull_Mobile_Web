@@ -3,6 +3,7 @@ import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity, Fla
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
+import BASE_URL from './config';
 
 const CreateContact = ({ navigation }) => {
   const [neurodivergences, setNeurodivergences] = useState([]);
@@ -39,7 +40,7 @@ const CreateContact = ({ navigation }) => {
   useEffect(() => {
     const fetchNeurodivergences = async () => {
       try {
-        const response = await axios.get(`http://10.0.2.2:3000/api/neurodivergences`);
+        const response = await axios.get(`${BASE_URL}/api/neurodivergences`);
         setNeurodivergences(response.data);
       } catch (error) {
         console.error('Failed to fetch neurodivergences:', error);
@@ -128,7 +129,7 @@ const CreateContact = ({ navigation }) => {
   
     console.log('Payload:', payload); // Log the payload to verify data
   
-    axios.post(`http://10.0.2.2:3000/api/contacts`, payload)
+    axios.post(`${BASE_URL}/api/contacts`, payload)
       .then(response => {
         Alert.alert('Success', 'Contact created successfully', [
           { text: "OK", onPress: () => navigation.goBack() }

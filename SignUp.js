@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, Alert, TouchableOpacity, Text } from 'react-native';
+import { View, TextInput, Button, StyleSheet, Alert, TouchableOpacity, Text, Platform } from 'react-native';
 import Talking from './assets/talking.svg';
 import Arrow from './assets/arrow_left.svg';
 import Background from './assets/background-signup.svg';
@@ -38,7 +38,7 @@ const SignUp = ({ navigation }) => {
       // Formatter la date au format YYYY-MM-DD pour l'envoyer au serveur
       const formattedBirthday = birthday ? format(birthday, 'yyyy-MM-dd') : null;
 
-      const response = await axios.post(`http://${BASE_URL}:3000/auth/register`, {
+      const response = await axios.post(`${BASE_URL}/auth/register`, {
         username,
         email,
         password,
@@ -47,7 +47,7 @@ const SignUp = ({ navigation }) => {
 
       if (response.status === 201) {
         Alert.alert('Success', 'User registered successfully');
-        navigation.navigate('SignIn'); // Rediriger vers l'écran de connexion après inscription
+        navigation.navigate('HomeAfterLogin'); // Rediriger vers l'écran de connexion après inscription
       } else {
         Alert.alert('Error', 'Failed to register user');
       }
