@@ -1,41 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, View, Text, FlatList, StyleSheet, TouchableOpacity, Pressable} from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import Logout from './assets/logout.svg';
 import Moon from './assets/moon.svg';
-import CheckBox from '@react-native-community/checkbox';
 import RFLogo from './assets/RFLogo.svg';
+import Delete from './assets/icons-delete.svg';
+import Edit from './assets/icons-edit.svg';
+import CheckBox from '@react-native-community/checkbox';
 import axios from 'axios';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { format, differenceInDays, parseISO, isToday, startOfDay } from 'date-fns';
-import LinearGradient from 'react-native-linear-gradient';
-import * as Animatable from 'react-native-animatable';
+import SegmentedControl from '@react-native-segmented-control/segmented-control';
+import { Swipeable } from 'react-native-gesture-handler';
+import BASE_URL from './config';
 
 const HomeScreenAfterLogin = () => {
   const [selectedSegment, setSelectedSegment] = useState('Contacts');
   const navigation = useNavigation();
   const segmentRef = useRef(null);
-  const contactButtonRef = useRef(null);
-  const taskButtonRef = useRef(null);
 
-  const handleSegmentChange = (segment) => {
-    if (segmentRef.current) {
-      segmentRef.current.fadeOut(70).then(() => {
-        setSelectedSegment(segment);
-        segmentRef.current.fadeIn(70);
-      });
-    } else {
-      setSelectedSegment(segment);
-    }
-  };
-
-  const handleButtonPress = (buttonRef, segment) => {
-    if (buttonRef.current) {
-      buttonRef.current.pulse(300).then(() => {
-        handleSegmentChange(segment);
-      });
-    } else {
-      handleSegmentChange(segment);
-    }
+  const handleSegmentChange = (event) => {
+    const selectedIndex = event.nativeEvent.selectedSegmentIndex;
+    const segments = ['Contacts', 'Tasks'];
+    setSelectedSegment(segments[selectedIndex]);
   };
 
   return (
@@ -51,39 +37,21 @@ const HomeScreenAfterLogin = () => {
       <View style={styles.header}>
         <Text style={styles.greeting}>Hi, Laë 👋🏻</Text>
       </View>
-      <LinearGradient
-        colors={['#EDEDED', '#fff', '#fff']}
-        locations={[0, 0.7, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.segmentContainer}
-      >
-        <Animatable.View ref={contactButtonRef} style={{ flex: 1 }}>
-          <TouchableOpacity
-            style={[
-              styles.segment,
-              selectedSegment === 'Contacts' && styles.selectedSegment,
-            ]}
-            onPress={() => handleButtonPress(contactButtonRef, 'Contacts')}
-          >
-            <Text style={styles.segmentText}>📞 Contacts</Text>
-          </TouchableOpacity>
-        </Animatable.View>
-        <Animatable.View ref={taskButtonRef} style={{ flex: 1 }}>
-          <TouchableOpacity
-            style={[
-              styles.segment,
-              selectedSegment === 'Tasks' && styles.selectedSegment,
-            ]}
-            onPress={() => handleButtonPress(taskButtonRef, 'Tasks')}
-          >
-            <Text style={selectedSegment === 'Tasks' ? styles.selectedSegmentText : styles.segmentText}>📝 Tasks</Text>
-          </TouchableOpacity>
-        </Animatable.View>
-      </LinearGradient>
-      <Animatable.View ref={segmentRef} style={{ flex: 1 }}>
+      <View style={styles.segmentContainer}>
+        <SegmentedControl
+          values={['Contacts', 'Tâches']}
+          selectedIndex={selectedSegment === 'Contacts' ? 0 : 1}
+          onChange={handleSegmentChange}
+          style={styles.segmentControl}
+          fontStyle={{ color: '#031D44', fontFamily: 'Inter-SemiBold' , fontSize: 16 }}
+          tintColor="#031D44"
+          backgroundColor="#fff"
+          height={42}
+        />
+      </View>
+      <View style={{ flex: 1 }}>
         {selectedSegment === 'Contacts' ? <ContactsTab /> : <TasksTab />}
-      </Animatable.View>
+      </View>
     </View>
   );
 };
@@ -111,7 +79,7 @@ const ContactsTab = () => {
 
   const fetchContacts = async () => {
     try {
-      const response = await axios.get(`http://10.0.2.2:3000/api/contacts`);
+      const response = await axios.get(`${BASE_URL}/api/contacts`);
       const today = startOfDay(new Date());
       const filteredContacts = response.data.filter(contact => {
         const lastContactDate = startOfDay(new Date(contact.last_contact));
@@ -185,7 +153,7 @@ const ContactsTab = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.contactHeader}>Ça fait longtemps 💡</Text>
+      <Text style={styles.contactHeader}>Vous ne les avez pas contacté depuis plus de 15 jours :</Text>
       <View style={styles.contactsContainer}>
         {contacts.length === 0 ? (
           <Text style={styles.noContactsText}>Aucun contact à recontacter</Text>
@@ -222,12 +190,13 @@ const ContactsTab = () => {
 
 const TasksTab = () => {
   const [tasks, setTasks] = useState([]);
+  const [taskCheckStates, setTaskCheckStates] = useState({});
   const navigation = useNavigation();
   const isFocused = useIsFocused();
 
   const fetchTasks = async () => {
     try {
-      const response = await axios.get(`http://10.0.2.2:3000/api/task-list`);
+      const response = await axios.get(`${BASE_URL}/api/task-list`);
       const today = new Date();
       const filteredTasks = response.data.filter(task => {
         const taskDueDate = new Date(task.due_date);
@@ -235,6 +204,13 @@ const TasksTab = () => {
         return daysDifference >= 0 && daysDifference <= 3;
       });
       setTasks(filteredTasks);
+
+      // Initialize task check states
+      const initialCheckStates = {};
+      filteredTasks.forEach(task => {
+        initialCheckStates[task._id] = false;
+      });
+      setTaskCheckStates(initialCheckStates);
     } catch (error) {
       console.error('Failed to fetch tasks:', error);
     }
@@ -246,41 +222,84 @@ const TasksTab = () => {
     }
   }, [isFocused]);
 
+  const handleCheckBoxChange = (taskId, newValue) => {
+    setTaskCheckStates(prevStates => ({
+      ...prevStates,
+      [taskId]: newValue
+    }));
+  };
+
   const handleDelete = async (taskId) => {
-    if (!taskId) {
-      console.error('Task ID is undefined');
-      return;
-    }
     try {
-      await axios.delete(`http://10.0.2.2:3000/api/task-list/${taskId}`);
-      fetchTasks(); // Mettre à jour la liste après suppression
+      await axios.delete(`${BASE_URL}/api/task-list/${taskId}`);
+      setTasks(tasks.filter(task => task._id !== taskId));
     } catch (error) {
       console.error('Failed to delete task:', error);
     }
   };
 
+  const renderRightActions = (taskId, dragX) => {
+    const opacity = dragX.interpolate({
+      inputRange: [-80, 0],
+      outputRange: [1, 0],
+    });
+
+    return (
+      <Animated.View style={[styles.rightAction, { opacity }]}>
+        <TouchableOpacity
+          onPress={() => handleDelete(taskId)}
+        >
+          <Text style={styles.actionText}><Delete width={27} height={27} fill="#fff"></Delete></Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
+  const renderLeftActions = (task, dragX) => {
+    const opacity = dragX.interpolate({
+      inputRange: [0, 80],
+      outputRange: [0, 1],
+    });
+
+    return (
+      <Animated.View style={[styles.leftAction, { opacity }]}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('UpdateTask', { task })}
+        >
+          <Text style={styles.actionText}><Edit width={27} height={27} fill="#fff"></Edit></Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
   const renderTaskItem = ({ item }) => {
     const taskId = item._id ? item._id.toString() : Math.random().toString();
     return (
-      <TouchableOpacity
-        style={styles.taskItem}
-        key={taskId}
-        onPress={() => navigation.navigate('TaskDetails', { taskId: item._id })}
+      <Swipeable
+        renderLeftActions={(progress, dragX) => renderLeftActions(item, dragX)}
+        renderRightActions={(progress, dragX) => renderRightActions(item._id, dragX)}
+        overshootLeft={false}
+        overshootRight={false}
       >
-        <CheckBox
-          style={styles.checkbox}
-          boxType='circle'
-          value={false}
-          onValueChange={() => handleDelete(item._id)}
-          tintColors={{ true: '#031D44', false: '#031D44' }}
-        />
-        <View style={styles.taskTextContainer}>
-          <Text style={styles.taskTitle}>{item.task}</Text>
-          <Text style={styles.taskText}>{item.task_description}</Text>
-          <Text style={styles.taskText}>Priorité: {item.priority}</Text>
-          <Text style={styles.taskText}>Échéance: {format(new Date(item.due_date), 'dd-MM-yyyy')}</Text>
+        <View style={styles.taskItem} key={taskId}>
+          <CheckBox
+            style={styles.checkbox}
+            boxType='circle'
+            value={taskCheckStates[item._id]}
+            onValueChange={(newValue) => handleCheckBoxChange(item._id, newValue)}
+            tintColors={{ true: '#031D44', false: '#031D44' }}
+          />
+          <TouchableOpacity
+            style={styles.taskTextContainer}
+            onPress={() => navigation.navigate('TaskDetails', { taskId: item._id })}
+          >
+            <Text style={styles.taskTitle}>{item.task}</Text>
+            <Text style={styles.taskText}>{item.task_description}</Text>
+            <Text style={styles.taskText}>Priorité: {item.priority}</Text>
+            <Text style={styles.taskText}>Échéance: {format(new Date(item.due_date), 'dd-MM-yyyy')}</Text>
+          </TouchableOpacity>
         </View>
-      </TouchableOpacity>
+      </Swipeable>
     );
   };
 
@@ -297,9 +316,12 @@ const TasksTab = () => {
         />
       )}
       <View style={styles.buttonContainer}>
-      <TouchableOpacity style={styles.taskButton} onPress={() => navigation.navigate('TaskList')}>
-        <Text style={styles.taskButtonText}>Voir toutes les tâches</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.taskButton} onPress={() => navigation.navigate('CreateTask')}>
+          <Text style={styles.taskButtonText}>Créer une tâche</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.taskButton} onPress={() => navigation.navigate('TaskList')}>
+          <Text style={styles.taskButtonText}>Voir toutes les tâches</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -318,6 +340,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     backgroundColor: '#fff',
+    marginTop: 60,
   },
   logoutContainer: {
     alignSelf: 'flex-start',
@@ -341,28 +364,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 10,
-    marginHorizontal: 20,
-    borderRadius: 20,
-    overflow: 'hidden',
+    marginVertical: 20,
+    marginHorizontal: 10,
   },
-  segment: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 18,
-  },
-  selectedSegment: {
-    backgroundColor: '#031D44',
-    borderRadius: 20,
-    elevation: 10,
-  },
-  segmentText: {
-    fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
-    color: '#031D44',
-  },
-  selectedSegmentText: {
-    color: 'white',
+  segmentControl: {
+    width: '100%',
   },
   contactsContainer: {
     backgroundColor: '#031D44',
@@ -449,6 +455,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F5F5F5',
     width: '100%',
+    marginVertical: 5,
   },
   taskTextContainer: {
     flex: 1,
@@ -460,22 +467,27 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     color: '#031D44',
     fontSize: 18,
-    
+    marginBottom: 7,
+    marginLeft: 20,
   },
   taskText: {
     fontFamily: 'Inter-Regular',
     color: '#031D44',
     fontSize: 14,
+    marginBottom: 5,
+    marginLeft: 20,
   },
   noTasksText: {
+    fontFamily: 'Inter-Regular',
     textAlign: 'center',
     marginTop: 20,
     fontSize: 16,
     color: '#666',
   },
   checkbox: {
-    width: 30, // Ajuster la taille du CheckBox
-    height: 30, // Ajuster la taille du CheckBox
+    width: 25,
+    height: 25,
+    paddingLeft: 10,
   },
   taskButton: {
     backgroundColor: '#031D44',
@@ -493,6 +505,29 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginVertical: 10,
     width: '100%',
+  },
+  rightAction: {
+    backgroundColor: '#FFCBA4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    borderRadius: 70,
+    height: '90%',
+    marginVertical: 5,
+  },
+  leftAction: {
+    backgroundColor: '#B3EAF1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 70,
+    width: 80,
+    height: '90%',
+    marginVertical: 5,
+  },
+  actionText: {
+    color: 'black',
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
   },
 });
 
