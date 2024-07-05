@@ -264,7 +264,7 @@ const TasksTab = () => {
     return (
       <Animated.View style={[styles.leftAction, { opacity }]}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('UpdateTask', { task })}
+          onPress={() => navigation.navigate('UpdateTask', { taskId: task._id})}
         >
           <Text style={styles.actionText}><Edit width={27} height={27} fill="#fff"></Edit></Text>
         </TouchableOpacity>
