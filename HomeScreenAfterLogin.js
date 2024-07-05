@@ -43,7 +43,8 @@ const HomeScreenAfterLogin = () => {
           selectedIndex={selectedSegment === 'Contacts' ? 0 : 1}
           onChange={handleSegmentChange}
           style={styles.segmentControl}
-          fontStyle={{ color: '#031D44', fontFamily: 'Inter-SemiBold' , fontSize: 16 }}
+          fontStyle={{ color: '#031D44', fontFamily: 'Inter-SemiBold', fontSize: 16 }}
+          activeFontStyle={{ color: '#fff', fontFamily: 'Inter-SemiBold', fontSize: 16 }}
           tintColor="#031D44"
           backgroundColor="#fff"
           height={42}
@@ -227,6 +228,17 @@ const TasksTab = () => {
       ...prevStates,
       [taskId]: newValue
     }));
+
+    setTasks(prevTasks => {
+      const updatedTasks = prevTasks.map(task => {
+        if (task._id === taskId) {
+          return { ...task, checked: newValue };
+        }
+        return task;
+      });
+      const sortedTasks = updatedTasks.sort((a, b) => (a.checked === b.checked) ? 0 : a.checked ? 1 : -1);
+      return sortedTasks;
+    });
   };
 
   const handleDelete = async (taskId) => {
@@ -249,7 +261,7 @@ const TasksTab = () => {
         <TouchableOpacity
           onPress={() => handleDelete(taskId)}
         >
-          <Text style={styles.actionText}><Delete width={27} height={27} fill="#fff"></Delete></Text>
+          <Text style={styles.actionText}><Delete width={27} height={27} fill="#fff" /></Text>
         </TouchableOpacity>
       </Animated.View>
     );
@@ -264,9 +276,9 @@ const TasksTab = () => {
     return (
       <Animated.View style={[styles.leftAction, { opacity }]}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('UpdateTask', { taskId: task._id})}
+          onPress={() => navigation.navigate('UpdateTask', { taskId: task._id })}
         >
-          <Text style={styles.actionText}><Edit width={27} height={27} fill="#fff"></Edit></Text>
+          <Text style={styles.actionText}><Edit width={27} height={27} fill="#fff" /></Text>
         </TouchableOpacity>
       </Animated.View>
     );
@@ -376,7 +388,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   contactHeader: {
-    fontSize: 18,
+    fontSize: 17,
     marginBottom: 20,
     width: '100%',
     fontFamily: 'Inter-SemiBold',
@@ -410,13 +422,13 @@ const styles = StyleSheet.create({
   contactText: {
     fontSize: 15,
     textAlign: 'center',
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'Inter-Regular',
     color: 'white',
   },
   daysUntilText: {
     fontSize: 12,
     textAlign: 'center',
-    fontFamily: 'Inter-Regular',
+    fontFamily: 'Inter-SemiBold',
     color: 'white',
   },
   RFLogo: {

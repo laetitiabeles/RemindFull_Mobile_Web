@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import Arrow from './assets/arrow_left.svg';
@@ -18,6 +18,9 @@ const CreateTask = () => {
   const [dueDate, setDueDate] = useState(new Date());
   const navigation = useNavigation();
   const { user } = useUser();
+
+  const descriptionRef = useRef(null);
+  const priorityRef = useRef(null);
 
   const handleCreateTask = async () => {
     if (!title || !dueDate) {
@@ -58,24 +61,33 @@ const CreateTask = () => {
         placeholder="Titre"
         value={title}
         onChangeText={setTitle}
+        returnKeyType="next"
+        onSubmitEditing={() => descriptionRef.current.focus()}
+        blurOnSubmit={false}
       />
       <TextInput
         style={styles.input}
         placeholder="Description"
         value={description}
         onChangeText={setDescription}
+        ref={descriptionRef}
+        returnKeyType="next"
+        onSubmitEditing={() => priorityRef.current.focus()}
+        blurOnSubmit={false}
       />
       <TextInput
         style={styles.input}
         placeholder="Priorité"
         value={priority}
         onChangeText={setPriority}
+        ref={priorityRef}
+        returnKeyType="done"
       />
-      <Text style={styles.dueDate}>Due Date:</Text>
+      <Text style={styles.dueDate}>Date d'échéance:</Text>
       <DatePicker
         date={dueDate}
         onDateChange={setDueDate}
-        minimumDate={new Date()} // La date minimum est la date du jour
+        minimumDate={new Date()}
         mode="date"
       />
       <TouchableOpacity

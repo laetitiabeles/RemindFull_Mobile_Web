@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import Arrow from './assets/arrow_left.svg';
@@ -18,6 +18,10 @@ const UpdateTask = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { taskId } = route.params;
+
+  // Références pour les champs de texte
+  const descriptionRef = useRef(null);
+  const priorityRef = useRef(null);
 
   useEffect(() => {
     const fetchTask = async () => {
@@ -62,24 +66,33 @@ const UpdateTask = () => {
         placeholder="Titre"
         value={task}
         onChangeText={setTask}
+        returnKeyType="next"
+        onSubmitEditing={() => descriptionRef.current.focus()}
+        blurOnSubmit={false}
       />
       <TextInput
         style={styles.input}
         placeholder="Description"
         value={description}
         onChangeText={setDescription}
+        ref={descriptionRef}
+        returnKeyType="next"
+        onSubmitEditing={() => priorityRef.current.focus()}
+        blurOnSubmit={false}
       />
       <TextInput
         style={styles.input}
         placeholder="Priorité"
         value={priority}
         onChangeText={setPriority}
+        ref={priorityRef}
+        returnKeyType="done"
       />
       <Text style={styles.dueDate}>Due Date:</Text>
       <DatePicker
         date={dueDate}
         onDateChange={setDueDate}
-        minimumDate={new Date()} // La date minimum est la date du jour
+        minimumDate={new Date()}
         mode="date"
       />
       <TouchableOpacity
@@ -108,7 +121,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: 'Inter-SemiBold',
-    color: '031D44',
+    color: '#031D44',
     fontSize: 24,
     marginBottom: 30,
   },
@@ -129,7 +142,7 @@ const styles = StyleSheet.create({
   },
   dueDate: {
     fontFamily: 'Inter-SemiBold',
-    color: '031D44',
+    color: '#031D44',
     fontSize: 20,
     marginBottom: 10,
   },

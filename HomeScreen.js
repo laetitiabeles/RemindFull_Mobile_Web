@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import BlueWave from './BlueWave';
 import RFLogo from './assets/RFLogo2.svg';
@@ -10,6 +10,9 @@ const HomeScreen = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const { setUser } = useUser();
+
+  // Références pour les champs de texte
+  const passwordRef = useRef(null);
 
   const handleSignIn = async () => {
     try {
@@ -41,7 +44,7 @@ const HomeScreen = ({ navigation }) => {
         <BlueWave />
       </View>
       <View style={styles.logoContainer}>
-        <RFLogo width={240} height={260}/>
+        <RFLogo width={240} height={260} />
       </View>
       <View style={styles.content}>
         <View style={styles.buttonContainer}>
@@ -51,6 +54,9 @@ const HomeScreen = ({ navigation }) => {
             placeholderTextColor="#FBFBF1"
             value={username}
             onChangeText={text => setUsername(text)}
+            returnKeyType="next"
+            onSubmitEditing={() => passwordRef.current.focus()}
+            blurOnSubmit={false}
           />
           <TextInput
             style={styles.input}
@@ -59,6 +65,9 @@ const HomeScreen = ({ navigation }) => {
             value={password}
             onChangeText={text => setPassword(text)}
             secureTextEntry
+            ref={passwordRef}
+            returnKeyType="done"
+            onSubmitEditing={handleSignIn}
           />
           <TouchableOpacity style={styles.signInButton} onPress={handleSignIn}>
             <Text style={styles.signInButtonText}>Se connecter</Text>
@@ -78,7 +87,7 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white', // Même couleur que le SVG
+    backgroundColor: 'white',
     alignItems: 'center',
   },
   waveContainer: {

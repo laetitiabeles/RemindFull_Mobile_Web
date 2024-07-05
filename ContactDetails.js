@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Button } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import axios from 'axios';
 import Arrow from './assets/arrow_left.svg';
+import Delete from './assets/icons-delete.svg';
+import Edit from './assets/icons-edit.svg';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { format, parseISO } from 'date-fns';
 import BASE_URL from './config';
@@ -90,13 +92,13 @@ const ContactDetails = () => {
           style={styles.editButton}
           onPress={() => navigation.navigate('UpdateGift', { gift: item })}
         >
-          <Text style={styles.buttonText}>✏️</Text>
+          <Edit width={20} height={20} fill="#fff" />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={() => handleDeleteGift(item.gift_id)}
         >
-          <Text style={styles.buttonText}>🗑️</Text>
+          <Delete width={20} height={20} fill="#fff" />
         </TouchableOpacity>
       </View>
     </View>
@@ -114,13 +116,13 @@ const ContactDetails = () => {
           style={styles.editButton}
           onPress={() => navigation.navigate('UpdateGiftIdea', { giftIdea: item })}
         >
-          <Text style={styles.buttonText}>✏️</Text>
+          <Edit width={20} height={20} fill="#fff" />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={() => handleDeleteGiftIdea(item.idea_id)}
         >
-          <Text style={styles.buttonText}>🗑️</Text>
+          <Delete width={20} height={20} fill="#fff" />
         </TouchableOpacity>
       </View>
     </View>
@@ -228,7 +230,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   editButton: {
-    backgroundColor: '#031D44',
+    backgroundColor: '#B3EAF1',
     borderRadius: 25,
     width: 40,
     height: 40,
@@ -237,7 +239,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   deleteButton: {
-    backgroundColor: '#031D44',
+    backgroundColor: '#FFCBA4',
     borderRadius: 25,
     width: 40,
     height: 40,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity, FlatList, Modal } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import Arrow from './assets/arrow_left.svg';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import BASE_URL from './config';
@@ -18,21 +19,17 @@ const CreateContact = ({ navigation }) => {
   });
   const [date, setDate] = useState(new Date());
   const [lastContactDate, setLastContactDate] = useState(new Date());
-  const [showBirthdayPicker, setShowBirthdayPicker] = useState(false);
-  const [showLastContactPicker, setShowLastContactPicker] = useState(false);
   const [error, setError] = useState('');
 
   const [gifts, setGifts] = useState([]);
   const [giftTitle, setGiftTitle] = useState('');
   const [giftDescription, setGiftDescription] = useState('');
   const [giftDate, setGiftDate] = useState(new Date());
-  const [showGiftDatePicker, setShowGiftDatePicker] = useState(false);
 
   const [giftIdeas, setGiftIdeas] = useState([]);
   const [ideaTitle, setIdeaTitle] = useState('');
   const [ideaDescription, setIdeaDescription] = useState('');
   const [ideaDate, setIdeaDate] = useState(new Date());
-  const [showIdeaDatePicker, setShowIdeaDatePicker] = useState(false);
 
   const [showGiftModal, setShowGiftModal] = useState(false);
   const [showGiftIdeaModal, setShowGiftIdeaModal] = useState(false);
@@ -53,10 +50,8 @@ const CreateContact = ({ navigation }) => {
   const onDateChange = (field, event, selectedDate) => {
     const currentDate = selectedDate || (field === 'birthday' ? date : lastContactDate);
     if (field === 'birthday') {
-      setShowBirthdayPicker(false);
       setDate(currentDate);
     } else {
-      setShowLastContactPicker(false);
       setLastContactDate(currentDate);
     }
 
@@ -66,13 +61,11 @@ const CreateContact = ({ navigation }) => {
 
   const onGiftDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || giftDate;
-    setShowGiftDatePicker(false);
     setGiftDate(currentDate);
   };
 
   const onIdeaDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || ideaDate;
-    setShowIdeaDatePicker(false);
     setIdeaDate(currentDate);
   };
 
@@ -106,7 +99,7 @@ const CreateContact = ({ navigation }) => {
     setError('');
   
     if (!contact.first_name || !contact.last_name) {
-      setError('First name and last name are required.');
+      setError('Les noms et prénoms sont requis');
       return;
     }
   
@@ -143,17 +136,20 @@ const CreateContact = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create Contact</Text>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.arrowContainer}>
+        <Arrow/>
+      </TouchableOpacity>
+      <Text style={styles.title}>Créer un contact</Text>
       {error && <Text style={styles.error}>{error}</Text>}
       <TextInput
         style={styles.input}
-        placeholder="First Name"
+        placeholder="Prénom"
         value={contact.first_name}
         onChangeText={text => setContact({ ...contact, first_name: text })}
       />
       <TextInput
         style={styles.input}
-        placeholder="Last Name"
+        placeholder="Nom"
         value={contact.last_name}
         onChangeText={text => setContact({ ...contact, last_name: text })}
       />
@@ -166,46 +162,55 @@ const CreateContact = ({ navigation }) => {
       />
       <TextInput
         style={styles.input}
-        placeholder="Phone Number"
+        placeholder="Téléphone"
         value={contact.phone_number}
         keyboardType="phone-pad"
         onChangeText={text => setContact({ ...contact, phone_number: text })}
       />
-      <TouchableOpacity onPress={() => setShowBirthdayPicker(true)} style={styles.input}>
-        <Text>{contact.birthday || "Select Birthday"}</Text>
-      </TouchableOpacity>
-      {showBirthdayPicker && (
+      <View style={styles.datePickerContainer}>
+        <Text style={styles.inputLabel}>Date de naissance :</Text>
         <DateTimePicker
           value={date}
           mode="date"
           display="default"
           onChange={(event, selectedDate) => onDateChange('birthday', event, selectedDate)}
           maximumDate={new Date()} // Prevent future dates
+          style={styles.dateTimePicker}
         />
-      )}
-      <TouchableOpacity onPress={() => setShowLastContactPicker(true)} style={styles.input}>
-        <Text>{contact.last_contact || "Select Last Contact Date"}</Text>
-      </TouchableOpacity>
-      {showLastContactPicker && (
+      </View>
+      <View style={styles.datePickerContainer}>
+        <Text style={styles.inputLabel}>Date de dernier contact :</Text>
         <DateTimePicker
           value={lastContactDate}
           mode="date"
+          display="default"
           onChange={(event, selectedDate) => onDateChange('last_contact', event, selectedDate)}
           maximumDate={new Date()} // Prevent future dates
+          style={styles.dateTimePicker}
         />
-      )}
+      </View>
       <Picker
         selectedValue={selectedNeurodivergence}
         onValueChange={itemValue => setSelectedNeurodivergence(itemValue)}
         style={styles.picker}
       >
-        <Picker.Item label="Select Neurodivergence" value={null} />
+        <Picker.Item label="Neurodivergence" value={null} />
         {neurodivergences.map(nd => (
           <Picker.Item key={nd.id} label={nd.type} value={nd.id} />
         ))}
       </Picker>
-      <Button title="Add Gift" onPress={() => setShowGiftModal(true)} />
-      <Button title="Add Gift Idea" onPress={() => setShowGiftIdeaModal(true)} />
+      <TouchableOpacity
+        style={styles.addGiftButton}
+        onPress={() => setShowGiftModal(true)}
+      >
+        <Text style={styles.addGiftButtonText}>Ajouter un cadeau</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.addGiftIdeaButton}
+        onPress={() => setShowGiftIdeaModal(true)}
+      >
+        <Text style={styles.addGiftIdeaButtonText}>Ajouter une idée cadeau</Text>
+      </TouchableOpacity>
       <FlatList
         data={gifts}
         keyExtractor={(item, index) => index.toString()}
@@ -224,7 +229,12 @@ const CreateContact = ({ navigation }) => {
           </View>
         )}
       />
-      <Button title="Create Contact" onPress={handleSubmit} />
+      <TouchableOpacity
+        style={styles.createButton}
+        onPress={() => handleSubmit()}
+      >
+        <Text style={styles.createButtonText}>Créer le contact</Text>
+      </TouchableOpacity>
 
       <Modal
         animationType="slide"
@@ -232,28 +242,25 @@ const CreateContact = ({ navigation }) => {
         visible={showGiftModal}
         onRequestClose={() => setShowGiftModal(false)}
       >
-        <View style={styles.modalView}>
-          <TouchableOpacity onPress={() => setShowGiftModal(false)} style={styles.backButton}>
-            <Text style={styles.backButtonText}>Retour</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Add Gift</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Gift Title"
-            value={giftTitle}
-            onChangeText={setGiftTitle}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Gift Description"
-            value={giftDescription}
-            onChangeText={setGiftDescription}
-          />
-          <Text>Date of Gift:</Text>
-          <TouchableOpacity onPress={() => setShowGiftDatePicker(true)} style={styles.input}>
-            <Text>{giftDate.toDateString() || "Select Gift Date"}</Text>
-          </TouchableOpacity>
-          {showGiftDatePicker && (
+        <View style={styles.modalContainer}>
+          <View style={styles.modalView}>
+            <TouchableOpacity onPress={() => setShowGiftModal(false)} style={styles.backButton}>
+              <Text style={styles.backButtonText}><Arrow width={32} height={32} fill="#031D44"></Arrow></Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Add Gift</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Gift Title"
+              value={giftTitle}
+              onChangeText={setGiftTitle}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Gift Description"
+              value={giftDescription}
+              onChangeText={setGiftDescription}
+            />
+            <Text>Date of Gift:</Text>
             <DateTimePicker
               value={giftDate}
               mode="date"
@@ -261,8 +268,10 @@ const CreateContact = ({ navigation }) => {
               onChange={onGiftDateChange}
               maximumDate={new Date()}
             />
-          )}
-          <Button title="OK" onPress={addGift} />
+            <TouchableOpacity onPress={addGift} style={styles.okButton}>
+              <Text style={styles.okButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
@@ -272,28 +281,25 @@ const CreateContact = ({ navigation }) => {
         visible={showGiftIdeaModal}
         onRequestClose={() => setShowGiftIdeaModal(false)}
       >
-        <View style={styles.modalView}>
-          <TouchableOpacity onPress={() => setShowGiftIdeaModal(false)} style={styles.backButton}>
-            <Text style={styles.backButtonText}>Retour</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Add Gift Idea</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Idea Title"
-            value={ideaTitle}
-            onChangeText={setIdeaTitle}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Idea Description"
-            value={ideaDescription}
-            onChangeText={setIdeaDescription}
-          />
-          <Text>Date of Idea:</Text>
-          <TouchableOpacity onPress={() => setShowIdeaDatePicker(true)} style={styles.input}>
-            <Text>{ideaDate.toDateString() || "Select Idea Date"}</Text>
-          </TouchableOpacity>
-          {showIdeaDatePicker && (
+        <View style={styles.modalContainer}>
+          <View style={styles.modalView}>
+            <TouchableOpacity onPress={() => setShowGiftIdeaModal(false)} style={styles.backButton}>
+              <Text style={styles.backButtonText}>Retour</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Add Gift Idea</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Idea Title"
+              value={ideaTitle}
+              onChangeText={setIdeaTitle}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Idea Description"
+              value={ideaDescription}
+              onChangeText={setIdeaDescription}
+            />
+            <Text>Date of Idea:</Text>
             <DateTimePicker
               value={ideaDate}
               mode="date"
@@ -301,8 +307,10 @@ const CreateContact = ({ navigation }) => {
               onChange={onIdeaDateChange}
               maximumDate={new Date()}
             />
-          )}
-          <Button title="OK" onPress={addGiftIdea} />
+            <TouchableOpacity onPress={addGiftIdea} style={styles.okButton}>
+              <Text style={styles.okButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
     </View>
@@ -313,23 +321,54 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
+    paddingTop: 120,
+  },
+  arrowContainer: {
+    position: 'absolute',
+    top: 10,
+    left: 20,
+    paddingTop: 50,
+    backgroundColor: 'white',
   },
   title: {
+    fontFamily: 'Inter-SemiBold',
+    color: '#031D44',
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 25,
   },
   input: {
+    width: '100%',
     height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
     marginBottom: 10,
-    padding: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 80,
+    borderWidth: 1.7,
+    borderColor: '#031D44',
+    borderRadius: 20,
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 15,
+    textAlign: 'center',
+    color: '#031D44',
+  },
+  datePickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontFamily: 'Inter-SemiBold',
+    color: '#031D44',
+    fontSize: 16,
+  },
+  dateTimePicker: {
+    width: 150, // Adjust width as needed
   },
   picker: {
-    height: 50,
-    marginBottom: 20,
+    width: '100%',
+    height: 30,
+    marginBottom: 100,
   },
   error: {
     color: 'red',
@@ -340,29 +379,87 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
   },
-  modalView: {
+  addGiftButton: {
+    backgroundColor: '#031D44',
+    borderRadius: 20,
+    padding: 15,
+    marginVertical: 10,
+    width: '100%',
+    marginBottom: 0,
+  },
+  addGiftButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
+  },
+  addGiftIdeaButton: {
+    backgroundColor: '#031D44',
+    borderRadius: 20,
+    padding: 15,
+    marginVertical: 10,
+    width: '100%',
+  },
+  addGiftIdeaButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
+  },
+  modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 50,
-    marginBottom: 50,
-    marginHorizontal: 20,
-    backgroundColor: 'white',
+  },
+  modalView: {
+    width: '80%',
+    height: '50%',
     padding: 20,
+    backgroundColor: 'white',
     borderRadius: 10,
     elevation: 5,
+  },
+  modalTitle: {
+    fontFamily: 'Inter-SemiBold',
+    color: '#031D44',
+    fontSize: 24,
+    marginBottom: 20,
+    marginTop: 60,
   },
   backButton: {
     position: 'absolute',
     top: 10,
     left: 10,
     padding: 10,
-    backgroundColor: '#ccc',
-    borderRadius: 5,
+    borderRadius: 20,
   },
-  backButtonText: {
+  createButton: {
+    backgroundColor: '#031D44',
+    borderRadius: 20,
+    padding: 15,
+    marginVertical: 10,
+    width: '100%',
+  },
+  createButtonText: {
+    color: '#fff',
     fontSize: 16,
-    color: 'white',
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
+  },
+  okButton: {
+    backgroundColor: '#031D44',
+    borderRadius: 20,
+    padding: 15,
+    marginVertical: 10,
+    marginTop: 30,
+    width: '100%',
+    alignItems: 'center',
+  },
+  okButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
   },
 });
 

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import Arrow from './assets/arrow_left.svg';
+import Delete from './assets/icons-delete.svg';
+import Edit from './assets/icons-edit.svg';
 import { useNavigation } from '@react-navigation/native';
 import BASE_URL from './config';
 
@@ -57,13 +59,13 @@ const ContactList = () => {
           style={styles.editButton}
           onPress={() => navigation.navigate('UpdateContact', { contact: item, onUpdate: handleUpdateContact })} // Passer onUpdate
         >
-          <Text style={styles.buttonText}>✏️</Text>
+          <Edit width={20} height={20} fill="#fff"/>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={() => handleDelete(item._id)}
         >
-          <Text style={styles.buttonText}>🗑️</Text>
+          <Delete width={20} height={20} fill="#fff"/>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -146,7 +148,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   editButton: {
-    backgroundColor: '#031D44',
+    backgroundColor: '#B3E1F4',
     borderRadius: 25,
     width: 40,
     height: 40,
@@ -155,17 +157,13 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   deleteButton: {
-    backgroundColor: '#031D44',
+    backgroundColor: '#FFCBA4',
     borderRadius: 25,
     width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
   },
 });
 
