@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, Alert, TouchableOpacity, Text, Platform } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, TextInput, StyleSheet, Alert, TouchableOpacity, Text, Platform } from 'react-native';
 import Talking from './assets/talking.svg';
 import Arrow from './assets/arrow_left.svg';
 import Background from './assets/background-signup.svg';
@@ -7,47 +7,42 @@ import axios from 'axios';
 import BASE_URL from './config';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 const SignUp = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [birthday, setBirthday] = useState(null);
-  const [date, setDate] = useState(new Date()); // État pour la date sélectionnée
-  const [show, setShow] = useState(false); // État pour afficher/masquer le sélecteur de date
+  const [date, setDate] = useState(new Date());
   const [error, setError] = useState('');
 
-  // Fonction pour afficher le sélecteur de date
-  const showDatePicker = () => {
-    setShow(true);
-  };
+  // Références pour les champs de texte
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
 
-  // Fonction pour gérer le changement de date sélectionnée
   const onChange = (event, selectedDate) => {
     const currentDate = selectedDate || date;
-    setShow(Platform.OS === 'ios');
     setDate(currentDate);
-    setBirthday(currentDate); // Mettre à jour l'état birthday avec la date sélectionnée
+    setBirthday(currentDate);
   };
 
-  // Fonction pour gérer l'inscription de l'utilisateur
   const handleSignUp = async () => {
     setError('');
 
     try {
-      // Formatter la date au format YYYY-MM-DD pour l'envoyer au serveur
       const formattedBirthday = birthday ? format(birthday, 'yyyy-MM-dd') : null;
 
       const response = await axios.post(`${BASE_URL}/auth/register`, {
         username,
         email,
         password,
-        birthday: formattedBirthday, // Envoyer la date au format correct au serveur
+        birthday: formattedBirthday,
       });
 
       if (response.status === 201) {
         Alert.alert('Success', 'User registered successfully');
-        navigation.navigate('HomeAfterLogin'); // Rediriger vers l'écran de connexion après inscription
+        navigation.navigate('HomeAfterLogin');
       } else {
         Alert.alert('Error', 'Failed to register user');
       }
@@ -58,61 +53,66 @@ const SignUp = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Background style={styles.background} />
-      <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.arrowContainer}>
-        <Arrow width={32} height={32} fill="#FBFBF1"/>
-      </TouchableOpacity>
-      <Talking width={350} height={350} marginTop={-50} />
-      <TextInput
-        style={styles.input}
-        placeholder="Nom d'utilisateur"
-        placeholderTextColor="#031D44"
-        placeholderFontSize="15"
-        placeholderFontFamily="Inter-SemiBold"
-        value={username}
-        onChangeText={text => setUsername(text)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="E-mail"
-        placeholderTextColor="#031D44"
-        placeholderFontSize="15"
-        placeholderFontFamily="Inter-SemiBold"
-        value={email}
-        onChangeText={text => setEmail(text)}
-        keyboardType="email-address"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Mot de passe"
-        placeholderTextColor="#031D44"
-        placeholderFontSize="15"
-        placeholderFontFamily="Inter-SemiBold"
-        value={password}
-        onChangeText={text => setPassword(text)}
-        secureTextEntry
-      />
-      <View>
-        <TouchableOpacity onPress={showDatePicker} style={styles.birthdayInput}>
-          <Text style={styles.textBirthday}>{birthday ? format(birthday, 'dd/MM/yyyy') : "Date de naissance"}</Text>
+    <KeyboardAwareScrollView 
+      style={{ flex: 1, backgroundColor: '#FBFBF1' }} 
+      contentContainerStyle={{ flexGrow: 1 }}
+      resetScrollToCoords={{ x: 0, y: 0 }}
+      scrollEnabled
+    >
+      <View style={styles.container}>
+        <Background style={styles.background} />
+        <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.arrowContainer}>
+          <Arrow width={32} height={32} fill="#FBFBF1" />
         </TouchableOpacity>
-        {show && (
+        <Talking width={350} height={350} style={styles.talking} />
+        <TextInput
+          style={styles.input}
+          placeholder="Nom d'utilisateur"
+          placeholderTextColor="#031D44"
+          value={username}
+          onChangeText={text => setUsername(text)}
+          returnKeyType="next"
+          onSubmitEditing={() => emailRef.current.focus()}
+          blurOnSubmit={false}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="E-mail"
+          placeholderTextColor="#031D44"
+          value={email}
+          onChangeText={text => setEmail(text)}
+          keyboardType="email-address"
+          ref={emailRef}
+          returnKeyType="next"
+          onSubmitEditing={() => passwordRef.current.focus()}
+          blurOnSubmit={false}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Mot de passe"
+          placeholderTextColor="#031D44"
+          value={password}
+          onChangeText={text => setPassword(text)}
+          secureTextEntry
+          ref={passwordRef}
+          returnKeyType="done"
+        />
+        <View style={styles.datePickerContainer}>
+          <Text style={styles.textBirthday}>{birthday ? format(birthday, 'dd/MM/yyyy') : "Date de naissance :"}</Text>
           <DateTimePicker
             value={date}
             mode="date"
-            display="default"
+            display="spinner"
             onChange={onChange}
-            maximumDate={new Date()}  // Optional: Prevent future dates
+            maximumDate={new Date()}
+            style={styles.dateTimePicker}
           />
-        )}
+        </View>
+        <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
+          <Text style={styles.buttonText}>S'inscrire</Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.signUpButton}
-      onPress={handleSignUp}
-      >
-      <Text style={styles.buttonText}>S'inscrire</Text>
-      </TouchableOpacity>
-    </View>
+    </KeyboardAwareScrollView>
   );
 };
 
@@ -124,6 +124,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: '#FBFBF1',
     paddingTop: 50,
+    marginBottom: 50,
   },
   background: {
     position: 'absolute',
@@ -137,37 +138,41 @@ const styles = StyleSheet.create({
   arrowContainer: {
     position: 'absolute',
     top: 10,
-    left: 10,
+    left: 20,
+    paddingTop: 50,
+  },
+  talking: {
+    marginTop: -42,
+    marginBottom: 50,
   },
   input: {
     width: '100%',
-    marginBottom: 10,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderWidth: 1.7,
+    borderWidth: 1.5,
     borderColor: '#031D44',
     borderRadius: 20,
     fontFamily: 'Inter-SemiBold',
     textAlign: 'center',
-    textColor: '#031D44',
+    color: '#031D44',
     fontSize: 15,
     marginBottom: 20,
   },
-  birthdayInput: {
-    width: '120%',
-    marginBottom: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 107,
-    borderWidth: 1.7,
-    borderColor: '#031D44',
-    borderRadius: 20,
+  datePickerContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   textBirthday: {
     color: '#031D44',
     fontSize: 15,
     fontFamily: 'Inter-SemiBold',
-    textAlign: 'left',
-    jusrtifyContent: 'left',
+    textAlign: 'center',
+    marginBottom: 10, // Add space between text and DateTimePicker
+  },
+  dateTimePicker: {
+    width: '100%',
+    height: 100,
   },
   signUpButton: {
     width: '100%',
@@ -176,7 +181,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#031D44',
     marginBottom: 10,
-    marginTop: 30,
+    marginTop: 10,
   },
   buttonText: {
     color: '#FBFBF1',
