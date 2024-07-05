@@ -29,17 +29,17 @@ function App() {
           <Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: false }}/>
           <Stack.Screen name="HomeAfterLogin" component={HomeScreenAfterLogin} options={{ headerShown: false }} />
           <Stack.Screen name="ContactList" component={ContactList} options={{ headerShown: false }} />
-          <Stack.Screen name="CreateContact" component={CreateContact} />
-          <Stack.Screen name="UpdateContact" component={UpdateContact} />
-          <Stack.Screen name="ContactDetails" component={ContactDetails} />
-          <Stack.Screen name="AddGift" component={AddGift} />
-          <Stack.Screen name="UpdateGift" component={UpdateGift} />
-          <Stack.Screen name="AddGiftIdea" component={AddGiftIdea} />
-          <Stack.Screen name="UpdateGiftIdea" component={UpdateGiftIdea} />
+          <Stack.Screen name="CreateContact" component={CreateContact} options={{ headerShown: false }} />
+          <Stack.Screen name="UpdateContact" component={UpdateContact} options={{ headerShown: false }} />
+          <Stack.Screen name="ContactDetails" component={ContactDetails} options={{ headerShown: false }} />
+          <Stack.Screen name="AddGift" component={AddGift} options={{ headerShown: false }} />
+          <Stack.Screen name="UpdateGift" component={UpdateGift} options={{ headerShown: false }} />
+          <Stack.Screen name="AddGiftIdea" component={AddGiftIdea} options={{ headerShown: false }} />
+          <Stack.Screen name="UpdateGiftIdea" component={UpdateGiftIdea} options={{ headerShown: false }} />
           <Stack.Screen name="TaskList" component={TaskList} options={{ headerShown: false }} />
-          <Stack.Screen name="CreateTask" component={CreateTask} />
-          <Stack.Screen name="UpdateTask" component={UpdateTask} />
-          <Stack.Screen name="TaskDetails" component={TaskDetails} />
+          <Stack.Screen name="CreateTask" component={CreateTask} options={{ headerShown: false }}/>
+          <Stack.Screen name="UpdateTask" component={UpdateTask} options={{ headerShown: false }} />
+          <Stack.Screen name="TaskDetails" component={TaskDetails} options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </UserProvider>
