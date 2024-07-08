@@ -6,29 +6,39 @@ import Delete from './assets/icons-delete.svg';
 import Edit from './assets/icons-edit.svg';
 import { useNavigation } from '@react-navigation/native';
 import BASE_URL from './config';
+import { EventRegister } from 'react-native-event-listeners';
 
 const ContactList = () => {
   const [contacts, setContacts] = useState([]);
   const [search, setSearch] = useState('');
   const navigation = useNavigation();
 
-  useEffect(() => {
-    const fetchContacts = async () => {
-      try {
-        const response = await axios.get(`${BASE_URL}/api/contacts`);
-        setContacts(response.data);
-      } catch (error) {
-        console.error('Failed to fetch contacts:', error);
-      }
-    };
+  const fetchContacts = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/contacts`);
+      setContacts(response.data);
+    } catch (error) {
+      console.error('Failed to fetch contacts:', error);
+    }
+  };
 
+  useEffect(() => {
     fetchContacts();
+    const contactCreatedListener = EventRegister.on('contactCreated', fetchContacts);
+    const contactUpdatedListener = EventRegister.on('contactUpdated', fetchContacts);
+    const contactDeletedListener = EventRegister.on('contactDeleted', fetchContacts);
+
+    return () => {
+      EventRegister.removeEventListener(contactCreatedListener);
+      EventRegister.removeEventListener(contactUpdatedListener);
+      EventRegister.removeEventListener(contactDeletedListener);
+    };
   }, []);
 
   const handleDelete = async (contactId) => {
     try {
       await axios.delete(`${BASE_URL}/api/contacts/${contactId}`);
-      setContacts(contacts.filter(contact => contact._id !== contactId));
+      EventRegister.emit('contactDeleted');
     } catch (error) {
       console.error('Failed to delete contact:', error);
     }
@@ -57,7 +67,7 @@ const ContactList = () => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.editButton}
-          onPress={() => navigation.navigate('UpdateContact', { contact: item, onUpdate: handleUpdateContact })} // Passer onUpdate
+          onPress={() => navigation.navigate('UpdateContact', { contact: item })} // Supprimer onUpdate
         >
           <Edit width={20} height={20} fill="#fff"/>
         </TouchableOpacity>

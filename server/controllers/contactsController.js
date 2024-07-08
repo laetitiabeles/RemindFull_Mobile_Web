@@ -45,59 +45,38 @@ const getContactById = (req, res) => {
 
 // Créer un nouveau contact
 const createContact = (req, res) => {
-  const { first_name, last_name, email, phone_number, birthday, last_contact, profile_id, gifts, gift_ideas, neurodivergences } = req.body.contact;
-
-  console.log("Received contact data:", req.body.contact);
-
+  const { first_name, last_name, email, phone_number, birthday, last_contact, neurodivergences, gifts, gift_ideas } = req.body.contact;
+  
   db.beginTransaction(err => {
     if (err) {
       return handleServerError(res, err);
     }
 
-    const insertContactQuery = `
-      INSERT INTO contact (first_name, last_name, email, phone_number, birthday, last_contact, profile_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
-    db.query(insertContactQuery, [first_name, last_name, email, phone_number, birthday, last_contact, profile_id], (err, result) => {
+    const insertContactQuery = 'INSERT INTO contact SET ?';
+    const contactData = { first_name, last_name, email, phone_number, birthday, last_contact };
+    
+    db.query(insertContactQuery, contactData, (err, result) => {
       if (err) {
-        console.error('Error inserting contact:', err);
         return db.rollback(() => handleServerError(res, err));
       }
 
       const contactId = result.insertId;
-      console.log('Inserted contact ID:', contactId);
 
       const insertNeurodivergences = (callback) => {
-        if (neurodivergences) {
-          const neurodivergencesArray = neurodivergences.split(',').map(nd => nd.trim());
-          if (neurodivergencesArray.length > 0) {
-            const getNeurodivergenceIdsQuery = `
-              SELECT id FROM neurodivergence WHERE type IN (?)
-            `;
-            db.query(getNeurodivergenceIdsQuery, [neurodivergencesArray], (err, results) => {
-              if (err) {
-                console.error('Error fetching neurodivergence ids:', err);
-                return db.rollback(() => handleServerError(res, err));
-              }
+        if (neurodivergences && neurodivergences.length > 0) {
+          const values = neurodivergences.map(nd => [contactId, nd]);
 
-              const neurodivergenceIds = results.map(result => result.id);
-              const values = neurodivergenceIds.map(ndId => [contactId, ndId]);
-
-              const insertQuery = `
-                INSERT INTO contact_neurodivergence (contact_id, neurodivergence_id)
-                VALUES ?
-              `;
-              db.query(insertQuery, [values], (err) => {
-                if (err) {
-                  console.error('Error inserting neurodivergences:', err);
-                  return db.rollback(() => handleServerError(res, err));
-                }
-                callback();
-              });
-            });
-          } else {
+          const insertQuery = `
+            INSERT INTO contact_neurodivergence (contact_id, neurodivergence_id)
+            VALUES ?
+          `;
+          db.query(insertQuery, [values], (err) => {
+            if (err) {
+              console.error('Error inserting neurodivergences:', err);
+              return db.rollback(() => handleServerError(res, err));
+            }
             callback();
-          }
+          });
         } else {
           callback();
         }
@@ -106,11 +85,11 @@ const createContact = (req, res) => {
       const insertGifts = (callback) => {
         if (gifts && gifts.length > 0) {
           const values = gifts.map(gift => [contactId, gift.title, gift.description, gift.date]);
+
           const insertQuery = `
             INSERT INTO gifts (contact_id, gift_title, gift_description, gift_date)
             VALUES ?
           `;
-          console.log('Inserting gifts with values:', values);
           db.query(insertQuery, [values], (err) => {
             if (err) {
               console.error('Error inserting gifts:', err);
@@ -126,11 +105,11 @@ const createContact = (req, res) => {
       const insertGiftIdeas = (callback) => {
         if (gift_ideas && gift_ideas.length > 0) {
           const values = gift_ideas.map(idea => [contactId, idea.title, idea.description, idea.date]);
+
           const insertQuery = `
             INSERT INTO gift_ideas (contact_id, gift_title, idea_description, idea_date)
             VALUES ?
           `;
-          console.log('Inserting gift ideas with values:', values);
           db.query(insertQuery, [values], (err) => {
             if (err) {
               console.error('Error inserting gift ideas:', err);
@@ -253,40 +232,48 @@ const updateContact = (req, res) => {
 const deleteContact = (req, res) => {
   const contactId = req.params.contactId;
 
+  const deleteQueries = [
+    `DELETE FROM gift_ideas WHERE contact_id = ?`,
+    `DELETE FROM gifts WHERE contact_id = ?`,
+    `DELETE FROM contact_neurodivergence WHERE contact_id = ?`,
+    `DELETE FROM contact WHERE _id = ?`
+  ];
+
   db.beginTransaction(err => {
     if (err) {
-      return handleServerError(res, err);
+      console.error('Error starting transaction:', err);
+      return res.status(500).json({ error: 'Failed to start transaction' });
     }
 
-    const deleteContactQuery = `
-      DELETE FROM contact
-      WHERE _id = ?
-    `;
-
-    db.query(deleteContactQuery, [contactId], (err) => {
-      if (err) {
-        return db.rollback(() => handleServerError(res, err));
-      }
-
-      const deleteContactNeurodivergencesQuery = `
-        DELETE FROM contact_neurodivergence
-        WHERE contact_id = ?
-      `;
-
-      db.query(deleteContactNeurodivergencesQuery, [contactId], (err) => {
-        if (err) {
-          return db.rollback(() => handleServerError(res, err));
-        }
+    const executeDeleteQuery = (queryIndex) => {
+      if (queryIndex < deleteQueries.length) {
+        db.query(deleteQueries[queryIndex], [contactId], (err) => {
+          if (err) {
+            console.error(`Error executing query ${queryIndex}:`, err);
+            return db.rollback(() => res.status(500).json({ error: 'Failed to delete related data' }));
+          }
+          executeDeleteQuery(queryIndex + 1);
+        });
+      } else {
         db.commit(err => {
           if (err) {
-            return db.rollback(() => handleServerError(res, err));
+            console.error('Error committing transaction:', err);
+            return db.rollback(() => res.status(500).json({ error: 'Failed to commit transaction' }));
           }
-          res.json({ message: 'Contact deleted successfully' });
+
+          console.log('Contact and related data deleted successfully');
+          res.status(200).json({ message: 'Contact deleted successfully' });
         });
-      });
-    });
+      }
+    };
+
+    executeDeleteQuery(0);
   });
 };
+
+
+
+
 
 module.exports = {
   getAllContacts,

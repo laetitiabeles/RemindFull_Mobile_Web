@@ -4,9 +4,11 @@ import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import BASE_URL from './config';
+import Arrow from './assets/arrow_left.svg';
+import { EventRegister } from 'react-native-event-listeners'; // Importer l'EventEmitter
 
 const UpdateContact = ({ route, navigation }) => {
-  const { contact, onUpdate } = route.params; // Ajouter onUpdate
+  const { contact } = route.params; // Supprimer onUpdate
 
   // Function to format the date as JJ-MM-AA
   const formatDate = (date) => {
@@ -67,7 +69,7 @@ const UpdateContact = ({ route, navigation }) => {
     axios.put(`${BASE_URL}/api/contacts/${updatedContact._id}`, {...updatedContactWithISO, neurodivergence_id: selectedNeurodivergence})
       .then(() => {
         Alert.alert('Contact modifié avec succès');
-        if (onUpdate) onUpdate(updatedContactWithISO); // Appel de la fonction de rappel onUpdate
+        EventRegister.emit('contactUpdated', updatedContactWithISO); // Émettre l'événement de mise à jour
         navigation.goBack();
       })
       .catch(error => {
@@ -78,6 +80,9 @@ const UpdateContact = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.arrowContainer}>
+        <Arrow width={32} height={32} fill="#031D44"/>
+      </TouchableOpacity>
       <Text style={styles.title}>Modifier le contact</Text>
       <TextInput
         style={styles.input}
@@ -104,29 +109,28 @@ const UpdateContact = ({ route, navigation }) => {
         placeholder="Téléphone"
         keyboardType="phone-pad"
       />
-      <TouchableOpacity onPress={showBirthdayDatePicker} style={styles.input}>
-        <Text>{updatedContact.birthday || "Anniversaire"}</Text>
-      </TouchableOpacity>
-      {showBirthdayPicker && (
+      <View style={styles.datePickerContainer}>
+        <Text style={styles.inputLabel}>Date de naissance :</Text>
         <DateTimePicker
           value={birthdayDate}
           mode="date"
+          display="default"
           onChange={onBirthdayChange}
-          maximumDate={new Date()}  // Optional: Prevent future dates
+          maximumDate={new Date()} // Prevent future dates
+          style={styles.dateTimePicker}
         />
-      )}
-      <TouchableOpacity onPress={showLastContactDatePicker} style={styles.input}>
-        <Text>{updatedContact.last_contact || "Dernier contact"}</Text>
-      </TouchableOpacity>
-      {showLastContactPicker && (
+      </View>
+      <View style={styles.datePickerContainer}>
+        <Text style={styles.inputLabel}>Date de dernier contact :</Text>
         <DateTimePicker
           value={lastContactDate}
           mode="date"
           display="default"
           onChange={onLastContactChange}
-          maximumDate={new Date()}  // Optional: Prevent future dates
+          maximumDate={new Date()} // Prevent future dates
+          style={styles.dateTimePicker}
         />
-      )}
+      </View>
       <Picker
         selectedValue={selectedNeurodivergence}
         onValueChange={setSelectedNeurodivergence}
@@ -153,7 +157,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    paddingTop: 80,
+    backgroundColor: 'white',
+    paddingTop: 120,
+  },
+  arrowContainer: {
+    position: 'absolute',
+    top: 10,
+    left: 20,
+    paddingTop: 50,
+    backgroundColor: 'white',
   },
   title: {
     fontSize: 24,
@@ -177,9 +189,8 @@ const styles = StyleSheet.create({
     color: '#031D44',
   },
   picker: {
-    height: 50,
     width: '100%',
-    marginBottom: 10,
+    height: 30,
   },
   buttonContainer: {
     marginTop: 150,
@@ -195,6 +206,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     textAlign: 'center',
+  },
+  datePickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontFamily: 'Inter-SemiBold',
+    color: '#031D44',
+    fontSize: 16,
   },
 });
 

@@ -6,6 +6,7 @@ import DatePicker from 'react-native-date-picker';
 import { useNavigation } from '@react-navigation/native';
 import { useUser } from './UserContext';
 import BASE_URL from './config';
+import { EventRegister } from 'react-native-event-listeners'; // Importer l'EventEmitter
 
 const formatDate = (date) => {
   return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
@@ -40,6 +41,7 @@ const CreateTask = () => {
 
       if (response.status === 201) {
         Alert.alert('Succès', 'Tâche créée avec succès');
+        EventRegister.emit('taskUpdated'); // Émettre l'événement de mise à jour des tâches
         navigation.goBack();
       } else {
         Alert.alert('Erreur', 'Échec de la création de la tâche');

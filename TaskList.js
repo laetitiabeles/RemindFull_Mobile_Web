@@ -9,6 +9,7 @@ import Arrow from './assets/arrow_left.svg';
 import Delete from './assets/icons-delete.svg';
 import Edit from './assets/icons-edit.svg';
 import { Swipeable } from 'react-native-gesture-handler';
+import { EventRegister } from 'react-native-event-listeners'; // Importer l'EventEmitter
 
 const formattedDate = (date) => {
   return format(new Date(date), 'dd-MM-yyyy');
@@ -40,6 +41,14 @@ const TaskList = () => {
     if (isFocused) {
       fetchTasks();
     }
+
+    // Écouter l'événement de mise à jour des tâches
+    const updateListener = EventRegister.addEventListener('taskUpdated', fetchTasks);
+
+    // Nettoyer l'écouteur d'événements lorsqu'il n'est plus nécessaire
+    return () => {
+      EventRegister.removeEventListener(updateListener);
+    };
   }, [isFocused]);
 
   const handleDelete = async (id) => {
@@ -142,7 +151,7 @@ const TaskList = () => {
       <TouchableOpacity onPress={() => navigation.navigate('HomeAfterLogin')} style={styles.arrowContainer}>
         <Arrow width={32} height={32} fill="#031D44"/>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.createButton} onPress={() => navigation.navigate('CreateTask', { fetchTasks })}>
+      <TouchableOpacity style={styles.createButton} onPress={() => navigation.navigate('CreateTask')}>
         <Text style={styles.createButtonText}>Créer une tâche</Text>
       </TouchableOpacity>
       {tasks.length === 0 ? (

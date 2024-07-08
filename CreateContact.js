@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity, FlatList, Modal } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import Arrow from './assets/arrow_left.svg';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import BASE_URL from './config';
+import { EventRegister } from 'react-native-event-listeners';
 
 const CreateContact = ({ navigation }) => {
   const [neurodivergences, setNeurodivergences] = useState([]);
@@ -56,7 +57,7 @@ const CreateContact = ({ navigation }) => {
     }
 
     const formattedDate = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getDate().toString().padStart(2, '0')}`;
-    setContact({...contact, [field]: formattedDate});
+    setContact({ ...contact, [field]: formattedDate });
   };
 
   const onGiftDateChange = (event, selectedDate) => {
@@ -97,12 +98,12 @@ const CreateContact = ({ navigation }) => {
 
   const handleSubmit = () => {
     setError('');
-  
+
     if (!contact.first_name || !contact.last_name) {
       setError('Les noms et prénoms sont requis');
       return;
     }
-  
+
     const payload = {
       contact: {
         ...contact,
@@ -119,13 +120,16 @@ const CreateContact = ({ navigation }) => {
         }))
       }
     };
-  
+
     console.log('Payload:', payload); // Log the payload to verify data
-  
+
     axios.post(`${BASE_URL}/api/contacts`, payload)
       .then(response => {
-        Alert.alert('Success', 'Contact created successfully', [
-          { text: "OK", onPress: () => navigation.goBack() }
+        Alert.alert('Success', 'Contact créé avec succès', [
+          { text: "OK", onPress: () => {
+            EventRegister.emit('contactCreated');
+            navigation.goBack();
+          }}
         ]);
       })
       .catch(error => {
@@ -134,10 +138,15 @@ const CreateContact = ({ navigation }) => {
   };
   
 
+  // References for TextInputs
+  const lastNameRef = useRef(null);
+  const emailRef = useRef(null);
+  const phoneRef = useRef(null);
+
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.arrowContainer}>
-        <Arrow/>
+        <Arrow width={32} height={32} fill="#031D44"/>
       </TouchableOpacity>
       <Text style={styles.title}>Créer un contact</Text>
       {error && <Text style={styles.error}>{error}</Text>}
@@ -146,12 +155,17 @@ const CreateContact = ({ navigation }) => {
         placeholder="Prénom"
         value={contact.first_name}
         onChangeText={text => setContact({ ...contact, first_name: text })}
+        returnKeyType="next"
+        onSubmitEditing={() => lastNameRef.current.focus()}
       />
       <TextInput
         style={styles.input}
         placeholder="Nom"
         value={contact.last_name}
         onChangeText={text => setContact({ ...contact, last_name: text })}
+        returnKeyType="next"
+        ref={lastNameRef}
+        onSubmitEditing={() => emailRef.current.focus()}
       />
       <TextInput
         style={styles.input}
@@ -159,6 +173,9 @@ const CreateContact = ({ navigation }) => {
         value={contact.email}
         keyboardType="email-address"
         onChangeText={text => setContact({ ...contact, email: text })}
+        returnKeyType="next"
+        ref={emailRef}
+        onSubmitEditing={() => phoneRef.current.focus()}
       />
       <TextInput
         style={styles.input}
@@ -166,6 +183,8 @@ const CreateContact = ({ navigation }) => {
         value={contact.phone_number}
         keyboardType="phone-pad"
         onChangeText={text => setContact({ ...contact, phone_number: text })}
+        returnKeyType="done"
+        ref={phoneRef}
       />
       <View style={styles.datePickerContainer}>
         <Text style={styles.inputLabel}>Date de naissance :</Text>
@@ -245,29 +264,32 @@ const CreateContact = ({ navigation }) => {
         <View style={styles.modalContainer}>
           <View style={styles.modalView}>
             <TouchableOpacity onPress={() => setShowGiftModal(false)} style={styles.backButton}>
-              <Text style={styles.backButtonText}><Arrow width={32} height={32} fill="#031D44"></Arrow></Text>
+              <Arrow width={32} height={32} fill="#031D44" />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Add Gift</Text>
+            <Text style={styles.modalTitle}>Ajouter un cadeau</Text>
             <TextInput
               style={styles.input}
-              placeholder="Gift Title"
+              placeholder="Cadeau"
               value={giftTitle}
               onChangeText={setGiftTitle}
             />
             <TextInput
               style={styles.input}
-              placeholder="Gift Description"
+              placeholder="Description"
               value={giftDescription}
               onChangeText={setGiftDescription}
             />
-            <Text>Date of Gift:</Text>
-            <DateTimePicker
-              value={giftDate}
-              mode="date"
-              display="default"
-              onChange={onGiftDateChange}
-              maximumDate={new Date()}
-            />
+            <View style={styles.modalDatePickerContainer}>
+              <Text style={styles.modalInputLabel}>Date du cadeau:</Text>
+              <DateTimePicker
+                value={giftDate}
+                mode="date"
+                display="default"
+                onChange={onGiftDateChange}
+                maximumDate={new Date()}
+                style={styles.dateTimePicker}
+              />
+            </View>
             <TouchableOpacity onPress={addGift} style={styles.okButton}>
               <Text style={styles.okButtonText}>OK</Text>
             </TouchableOpacity>
@@ -284,29 +306,32 @@ const CreateContact = ({ navigation }) => {
         <View style={styles.modalContainer}>
           <View style={styles.modalView}>
             <TouchableOpacity onPress={() => setShowGiftIdeaModal(false)} style={styles.backButton}>
-              <Text style={styles.backButtonText}>Retour</Text>
+              <Arrow width={32} height={32} fill="#031D44" />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Add Gift Idea</Text>
+            <Text style={styles.modalTitle}>Ajouter une idée cadeau</Text>
             <TextInput
               style={styles.input}
-              placeholder="Idea Title"
+              placeholder="Idée"
               value={ideaTitle}
               onChangeText={setIdeaTitle}
             />
             <TextInput
               style={styles.input}
-              placeholder="Idea Description"
+              placeholder="Description"
               value={ideaDescription}
               onChangeText={setIdeaDescription}
             />
-            <Text>Date of Idea:</Text>
-            <DateTimePicker
-              value={ideaDate}
-              mode="date"
-              display="default"
-              onChange={onIdeaDateChange}
-              maximumDate={new Date()}
-            />
+            <View style={styles.modalDatePickerContainer}>
+              <Text style={styles.modalInputLabel}>Date:</Text>
+              <DateTimePicker
+                value={ideaDate}
+                mode="date"
+                display="default"
+                onChange={onIdeaDateChange}
+                maximumDate={new Date()}
+                style={styles.dateTimePicker}
+              />
+            </View>
             <TouchableOpacity onPress={addGiftIdea} style={styles.okButton}>
               <Text style={styles.okButtonText}>OK</Text>
             </TouchableOpacity>
@@ -425,6 +450,17 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginBottom: 20,
     marginTop: 60,
+  },
+  modalDatePickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  modalInputLabel: {
+    fontFamily: 'Inter-SemiBold',
+    color: '#031D44',
+    fontSize: 16,
   },
   backButton: {
     position: 'absolute',
