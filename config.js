@@ -2,7 +2,9 @@
 import { Platform } from 'react-native';
 import axios from 'axios';
 
-const BASE_URL = Platform.OS === 'ios' ? 'http://10.8.0.83:3000' : 'http://10.0.2.2:3000';
+// 10.8.0.83 
+
+const BASE_URL = Platform.OS === 'ios' ? 'http://10.0.203.87:3000' : 'http://10.0.2.2:3000';
 console.log(`BASE_URL: ${BASE_URL}`);
 
 axios.interceptors.response.use(
