@@ -48,16 +48,14 @@ This project was developed as part of my final year project at Holberton School,
 
 <a>https://laetitiabeles.github.io/remindfull-landing_page/</a>
 
----
+--- 
+## Features
 
-##  Features
+- Create, Update, Delete contacts
+- Create, Update, Delete tasks
+- Dashboard with birthday and contact reminder
+- Create, update, delete gifts and gift ideas for each contact
 
-<ul>
-  <li>Create, Update, Delete contacts</li>
-  <li>Create, Update, Delete tasks</li>
-  <li>Dashboard with birthday and contact reminder</li>
-  <li>Create, update, delete gifts and gift ideas for each contact</li>
-</ul>
 
 See more on <a>https://laetitiabeles.github.io/remindfull-landing_page/</a>
 
@@ -98,6 +96,18 @@ npm install
 Use the following command to run RemindFull_Mobile_Web:
 
 ```sh
+cd server
+```
+
+```sh
+node server.js
+```
+
+```sh
+cd ..
+```
+
+```sh
 npm react-native start
 ```
 
@@ -107,9 +117,9 @@ Choose iOS or Android
 
 ##  Project Roadmap
 
-**First week:** Database, API, server and Android Studio setup
-**Second week:** Database, server and API hot fix, add "contacts" and "tasks" features, built a rudimentary front-end to test back-end
-**Third week:** Add "gifts" and "gift ideas" features, "contacts" and "tasks" hot fix, developed the final front-end
-**Fourth week:** Fixing back-end and front-end
+- **First week:** Database, API, server and Android Studio setup
+- **Second week:** Database, server and API hot fix, add "contacts" and "tasks" features, built a rudimentary front-end to test back-end
+- **Third week:** Add "gifts" and "gift ideas" features, "contacts" and "tasks" hot fix, developed the final front-end
+- **Fourth week:** Fixing back-end and front-end
 
 ---
